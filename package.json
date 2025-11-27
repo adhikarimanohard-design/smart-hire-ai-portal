@@ -1,22 +1,14 @@
-Path: package.json (root directory)
 {
   "name": "smart-hire-ai-portal",
   "version": "1.0.0",
-  "description": "AI-Powered Job Portal with ML Matching Engine - 85% accuracy, 10K+ users",
-  "main": "index.html",
+  "private": true,
   "scripts": {
-    "start": "serve .",
-    "build": "echo 'Build complete'"
+    "dev": "react-scripts start",
+    "build": "react-scripts build",
+    "start": "react-scripts start"
   },
-  "keywords": [
-    "AI",
-    "job-portal",
-    "machine-learning",
-    "react",
-    "spring-boot",
-    "mongodb",
-    "aws"
-  ],
-  "author": "Your Name",
-  "license": "MIT"
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
 }
