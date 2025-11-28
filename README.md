@@ -10,7 +10,7 @@
 > Enterprise-grade AI job matching platform with **85% accuracy**, serving **10K+ users**
 
 ## 🚀 Live Demo
-**[View Live Project →](https://smart-hire-ai-portal.vercel.app)**
+**[View Live Project] (https://adhikarimanohard-design.github.io/smart-hire-ai-portal/ )**
 
 ![SMART HIRE Dashboard](https://via.placeholder.com/800x400/6366f1/ffffff?text=SMART+HIRE+Dashboard)
 
