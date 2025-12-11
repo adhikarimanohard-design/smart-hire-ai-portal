@@ -1,4 +1,4 @@
-package.com.smarthire.controller;
+package com.smarthire.controller;
 
 import com.smarthire.model.Job;
 import com.smarthire.service.JobService;
