@@ -28,7 +28,8 @@ public class Application {
         this.updatedAt = LocalDateTime.now();
         this.status = "APPLIED";
     }
-// Getters and Setters
+
+    // Getters and Setters
     public String getId() {
         return id;
     }
