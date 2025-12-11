@@ -1,0 +1,14 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "mvn -f backend/pom.xml clean package -DskipTests"
+  },
+  "deploy": {
+    "startCommand": "java -jar backend/target/*.jar"
+  },
+  "rootDirectory": "backend",
+  "watchPaths": [
+    "backend/src/",
+    "backend/pom.xml"
+  ]
+}
