@@ -1,4 +1,4 @@
-package.com.smarthire.controller;
+package com.smarthire.controller;
 
 import com.smarthire.model.Application;
 import com.smarthire.service.ApplicationService;
