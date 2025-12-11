@@ -1,4 +1,4 @@
-package main.java.com.smarthire.config;
+package.com.smarthire.config;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
