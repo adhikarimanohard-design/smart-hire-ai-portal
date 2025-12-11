@@ -1,4 +1,4 @@
-package main.java.com.smarthire.service;
+package com.smarthire.service;
 
 import com.smarthire.model.Application;
 import com.smarthire.model.Job;
