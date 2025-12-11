@@ -1,4 +1,4 @@
-package main.java.com.smarthire.repository;
+package com.smarthire.repository;
 
 import com.smarthire.model.Job;
 import org.springframework.data.mongodb.repository.MongoRepository;
