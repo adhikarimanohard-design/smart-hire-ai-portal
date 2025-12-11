@@ -1,14 +1,11 @@
 {
   "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "mvn -f backend/pom.xml clean package -DskipTests"
+    "builder": "nixpacks",
+    "buildCommand": "mvn -f backend/pom.xml clean package"
   },
   "deploy": {
-    "startCommand": "java -jar backend/target/*.jar"
-  },
-  "rootDirectory": "backend",
-  "watchPaths": [
-    "backend/src/",
-    "backend/pom.xml"
-  ]
+    "startCommand": "java -jar backend/target/*.jar",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  }
 }
