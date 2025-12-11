@@ -32,7 +32,7 @@ public class Job {
         this.active = true;
         this.applicationsCount = 0;
         this.viewsCount = 0;
-}
+    }
     
     // Getters and Setters
     public String getId() {
@@ -62,7 +62,7 @@ public class Job {
     public String getLocation() {
         return location;
     }
-public void setLocation(String location) {
+    public void setLocation(String location) {
         this.location = location;
     }
     
@@ -97,7 +97,7 @@ public void setLocation(String location) {
     public void setRequirements(List<String> requirements) {
         this.requirements = requirements;
     }
-public List<String> getSkills() {
+    public List<String> getSkills() {
         return skills;
     }
     
@@ -124,7 +124,7 @@ public List<String> getSkills() {
     public LocalDateTime getExpiryDate() {
         return expiryDate;
     }
-public void setExpiryDate(LocalDateTime expiryDate) {
+    public void setExpiryDate(LocalDateTime expiryDate) {
         this.expiryDate = expiryDate;
     }
     
