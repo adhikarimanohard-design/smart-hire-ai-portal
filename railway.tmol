@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+
+[build.nixpacks]
+path = "backend"
+
+[deploy]
+start = "java -jar target/*.jar"
