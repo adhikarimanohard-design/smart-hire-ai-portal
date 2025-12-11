@@ -1,4 +1,4 @@
-package main.java.com.smarthire.model;
+package com.smarthire.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
