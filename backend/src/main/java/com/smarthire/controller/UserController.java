@@ -1,4 +1,4 @@
-package main.java.com.smarthire.controller;
+package com.smarthire.controller;
 
 import com.smarthire.model.User;
 import com.smarthire.service.UserService;
