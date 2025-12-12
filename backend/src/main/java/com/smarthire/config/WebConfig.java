@@ -8,13 +8,18 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${cors.allowed-origins}")
+    // IMPORTANT: Reading from the new environment variable set on Render
+    @Value("${CORS_ALLOWED_ORIGINS}")
     private String allowedOrigins;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")   // MUST be /** for all endpoints
-                .allowedOrigins(allowedOrigins.split(","))
+        
+        // This splits your comma-separated string (e.g., frontend.com,localhost:3000)
+        String[] origins = allowedOrigins.split(",");
+
+        registry.addMapping("/**") // Maps to all endpoints, including /api
+                .allowedOrigins(origins)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
