@@ -8,9 +8,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration 
 public class MongoConfig {
     
+    // This bean uses the MONGODB_URI environment variable set on Render.
     @Bean
     public MongoClient mongoClient() {
-        // This uses the MONGODB_URI variable you set on Render.
         return MongoClients.create(System.getenv("MONGODB_URI")); 
     }
 }
