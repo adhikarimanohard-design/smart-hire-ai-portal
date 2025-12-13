@@ -578,10 +578,29 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-            <div class="footer-title">Built with React + Redux, Spring Boot, MongoDB & AWS</div>
+            <div class="footer-title">Built with HTML, CSS ,JavaScript , Spring Boot, MongoDB & Render </div>
             <div class="footer-stats">85% Matching Accuracy • 10K+ Users • 40% Faster Job Search</div>
             <div class="footer-credit">Personal Project by Adhikari Manohar • 2024</div>
         </div>
     </footer>
+
+<script>
+const USERS_API = "https://smart-hire-ai-portal-17.onrender.com/api/users";
+
+fetch(USERS_API)
+  .then(response => {
+    if (!response.ok) {
+      throw new Error("HTTP error " + response.status);
+    }
+    return response.json();
+  })
+  .then(users => {
+    console.log("✅ Backend connected. Users:", users);
+  })
+  .catch(error => {
+    console.error("❌ Backend connection failed:", error);
+  });
+</script>
+
 </body>
 </html>
