@@ -585,21 +585,71 @@
     </footer>
 
 <script>
-const USERS_API = "https://smart-hire-ai-portal-17.onrender.com/api/users";
+/* =========================
+   CONFIG
+========================= */
+const API_BASE = "https://smart-hire-ai-portal-17.onrender.com/api/users";
 
-fetch(USERS_API)
-  .then(response => {
-    if (!response.ok) {
-      throw new Error("HTTP error " + response.status);
-    }
-    return response.json();
+/* =========================
+   BACKEND CONNECT TEST
+========================= */
+fetch(`${API_BASE}/api/users`)
+  .then(res => {
+    if (!res.ok) throw new Error(res.status);
+    return res.json();
   })
-  .then(users => {
-    console.log("✅ Backend connected. Users:", users);
+  .then(data => {
+    console.log("✅ Backend connected. Users:", data);
   })
-  .catch(error => {
-    console.error("❌ Backend connection failed:", error);
+  .catch(err => {
+    console.error("❌ Backend error:", err);
   });
+
+/* =========================
+   SEARCH FUNCTIONALITY
+========================= */
+const searchInput = document.querySelector(".search-input");
+const jobCards = document.querySelectorAll(".job-card");
+
+searchInput.addEventListener("keyup", () => {
+  const query = searchInput.value.toLowerCase();
+
+  jobCards.forEach(card => {
+    const text = card.innerText.toLowerCase();
+    card.style.display = text.includes(query) ? "block" : "none";
+  });
+});
+
+/* =========================
+   FILTER BUTTON
+========================= */
+document.querySelector(".filter-btn").addEventListener("click", () => {
+  alert("🔍 Filter logic will be added next (working button)");
+});
+
+/* =========================
+   APPLY BUTTONS
+========================= */
+document.querySelectorAll(".apply-btn").forEach(button => {
+  button.addEventListener("click", (e) => {
+    e.stopPropagation();
+
+    const jobTitle =
+      e.target.closest(".job-card").querySelector(".job-title").innerText;
+
+    alert(`✅ Applied successfully for: ${jobTitle}`);
+  });
+});
+
+/* =========================
+   JOB CARD CLICK
+========================= */
+jobCards.forEach(card => {
+  card.addEventListener("click", () => {
+    const title = card.querySelector(".job-title").innerText;
+    alert(`📄 Job Details: ${title}`);
+  });
+});
 </script>
 
 </body>
