@@ -41,7 +41,7 @@ Backend (Render): Spring Boot REST API server
 
 🛠️ Tech Stack
 
-Frontend
+FRONTEND
 
 HTML5
 
@@ -52,7 +52,7 @@ JavaScript (Vanilla)
 GitHub Pages (Hosting)
 
 
-Backend
+BACKEND
 
 Java 17
 
@@ -63,12 +63,12 @@ Spring Data MongoDB
 RESTful APIs
 
 
-Database
+DATABASE
 
 MongoDB
 
 
-Deployment & Tools
+DEPLOYMENT AND TOOLS
 
 Render (Backend deployment)
 
