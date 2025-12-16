@@ -8,6 +8,9 @@ A deployed, dynamic full-stack web application built as a placement project. SMA
  https://adhikarimanohard-design.github.io/smart-hire-ai-portal/
 
 
+---
+
+
 📌 Project Overview
 
 SMART HIRE is designed to demonstrate real-world software engineering skills expected in campus placements. The application features a live frontend connected to a Spring Boot backend with MongoDB, deployed on cloud platforms.
