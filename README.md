@@ -2,7 +2,7 @@
 
 A deployed, dynamic full-stack web application built as a placement project. SMART HIRE simulates an AI-based job portal that connects candidates and recruiters using intelligent job matching and recommendations.
 
-
+---
 
 🖇LIVE URL -
  https://adhikarimanohard-design.github.io/smart-hire-ai-portal/
