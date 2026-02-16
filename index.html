@@ -379,6 +379,22 @@
             color: #9ca3af;
             font-size: 12px;
         }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #c4b5fd;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            color: #fca5a5;
+        }
     </style>
 </head>
 <body>
@@ -407,7 +423,7 @@
                     <span class="stat-icon">💼</span>
                     <span class="stat-badge">Live</span>
                 </div>
-                <div class="stat-number">10,234</div>
+                <div class="stat-number" id="job-count">Loading...</div>
                 <div class="stat-label">Active Jobs</div>
             </div>
             
@@ -442,145 +458,23 @@
         <!-- Search Section -->
         <div class="search-section">
             <div class="search-bar">
-                <input type="text" class="search-input" placeholder="Search jobs, companies, or skills...">
-                <button class="filter-btn">🔍 Filter</button>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search jobs, companies, or skills...">
+                <button class="filter-btn">🔍 Search</button>
             </div>
         </div>
 
-        <!-- Jobs Grid -->
-        <div class="jobs-grid">
-            <!-- Job Card 1 -->
-            <div class="job-card">
-                <div class="job-header">
-                    <div>
-                        <div class="job-title">Senior Full Stack Engineer</div>
-                        <div class="company">TechCorp Inc</div>
-                        <div class="job-meta">📍 Bangalore, India • 🕒 2 days ago</div>
-                    </div>
-                    <div class="match-badge match-high">92% Match</div>
-                </div>
-                
-                <div class="skills">
-                    <span class="skill-tag">React</span>
-                    <span class="skill-tag">Node.js</span>
-                    <span class="skill-tag">AWS</span>
-                    <span class="skill-tag">MongoDB</span>
-                    <span class="skill-tag">TypeScript</span>
-                </div>
-                
-                <p class="job-description">
-                    Leading tech company seeking experienced full stack engineer to build scalable cloud applications.
-                </p>
-                
-                <div class="job-footer">
-                    <span class="salary">💰 ₹50-70 LPA</span>
-                    <button class="apply-btn">Apply Now</button>
-                </div>
-            </div>
-
-            <!-- Job Card 2 -->
-            <div class="job-card">
-                <div class="job-header">
-                    <div>
-                        <div class="job-title">ML Engineer</div>
-                        <div class="company">AI Innovations</div>
-                        <div class="job-meta">📍 Remote • 🕒 1 day ago</div>
-                    </div>
-                    <div class="match-badge match-medium">78% Match</div>
-                </div>
-                
-                <div class="skills">
-                    <span class="skill-tag">Python</span>
-                    <span class="skill-tag">TensorFlow</span>
-                    <span class="skill-tag">PyTorch</span>
-                    <span class="skill-tag">NLP</span>
-                    <span class="skill-tag">AWS</span>
-                </div>
-                
-                <p class="job-description">
-                    Build cutting-edge ML models for recommendation systems and natural language processing.
-                </p>
-                
-                <div class="job-footer">
-                    <span class="salary">💰 ₹60-80 LPA</span>
-                    <button class="apply-btn">Apply Now</button>
-                </div>
-            </div>
-
-            <!-- Job Card 3 -->
-            <div class="job-card">
-                <div class="job-header">
-                    <div>
-                        <div class="job-title">DevOps Architect</div>
-                        <div class="company">CloudScale Systems</div>
-                        <div class="job-meta">📍 Hyderabad, India • 🕒 3 days ago</div>
-                    </div>
-                    <div class="match-badge match-high">85% Match</div>
-                </div>
-                
-                <div class="skills">
-                    <span class="skill-tag">Kubernetes</span>
-                    <span class="skill-tag">Docker</span>
-                    <span class="skill-tag">AWS</span>
-                    <span class="skill-tag">CI/CD</span>
-                    <span class="skill-tag">Terraform</span>
-                </div>
-                
-                <p class="job-description">
-                    Design and implement scalable cloud infrastructure for high-traffic applications.
-                </p>
-                
-                <div class="job-footer">
-                    <span class="salary">💰 ₹55-75 LPA</span>
-                    <button class="apply-btn">Apply Now</button>
-                </div>
-            </div>
-
-            <!-- Features Card -->
-            <div class="features-card">
-                <h3 class="features-title">Platform Features</h3>
-                
-                <div class="feature-item">
-                    <div class="feature-icon">🤖</div>
-                    <div class="feature-content">
-                        <h4>85% ML Matching Accuracy</h4>
-                        <p>AI-powered job recommendations</p>
-                    </div>
-                </div>
-                
-                <div class="feature-item">
-                    <div class="feature-icon">📄</div>
-                    <div class="feature-content">
-                        <h4>NLP Resume Parsing</h4>
-                        <p>Automatic skill extraction</p>
-                    </div>
-                </div>
-                
-                <div class="feature-item">
-                    <div class="feature-icon">⚡</div>
-                    <div class="feature-content">
-                        <h4>40% Faster Job Search</h4>
-                        <p>Real-time notifications</p>
-                    </div>
-                </div>
-                
-                <div class="feature-item">
-                    <div class="feature-icon">☁️</div>
-                    <div class="feature-content">
-                        <h4>Cloud-Native Architecture</h4>
-                        <p>Scalable and reliable</p>
-                    </div>
-                </div>
-            </div>
+        <!-- Jobs Grid (will be populated dynamically) -->
+        <div class="jobs-grid" id="jobsContainer">
+            <div class="loading">Loading jobs from database...</div>
         </div>
     </div>
 
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-            <div class="footer-title">Built with HTML, CSS ,JavaScript , Spring Boot, MongoDB & Render </div>
-            <div class="footer-stats">85% Matching Accuracy • 10K+ Users • 40% Faster Job Search</div>
-            <div class="footer-credit">Personal Project by Adhikari Manohar • 2024</div>
+            <div class="footer-title">Built with HTML, CSS, JavaScript, Spring Boot, MongoDB & Render</div>
+            <div class="footer-stats">85% Matching Accuracy • <span id="footer-job-count">10K+</span> Jobs • 40% Faster Job Search</div>
+            <div class="footer-credit">Personal Project by Adhikari Manohar • 2025</div>
         </div>
     </footer>
 
@@ -588,67 +482,291 @@
 /* =========================
    CONFIG
 ========================= */
-const API_BASE = "https://smart-hire-ai-portal-17.onrender.com";
+const API_BASE = "https://smart-hire-ai-portal-17.onrender.com/api";
 
 /* =========================
-   BACKEND CONNECT TEST
+   GLOBAL STATE
 ========================= */
-fetch(`${API_BASE}/api/users`)
-  .then(res => {
-    if (!res.ok) throw new Error(res.status);
-    return res.json();
-  })
-  .then(data => {
-    console.log("✅ Backend connected. Users:", data);
-  })
-  .catch(err => {
-    console.error("❌ Backend error:", err);
-  });
+let allJobs = [];
+
+/* =========================
+   LOAD JOBS FROM MONGODB
+========================= */
+async function loadJobs() {
+    const container = document.getElementById('jobsContainer');
+    
+    try {
+        console.log("🔄 Fetching jobs from MongoDB...");
+        
+        const response = await fetch(`${API_BASE}/jobs`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        allJobs = await response.json();
+        
+        console.log(`✅ Loaded ${allJobs.length} jobs from database`);
+        
+        // Update job count in stats
+        document.getElementById('job-count').textContent = allJobs.length;
+        document.getElementById('footer-job-count').textContent = `${allJobs.length}`;
+        
+        displayJobs(allJobs);
+        
+    } catch (error) {
+        console.error("❌ Error loading jobs:", error);
+        container.innerHTML = `
+            <div class="error">
+                <h3>⚠️ Failed to load jobs</h3>
+                <p>${error.message}</p>
+                <p>Please check if the backend is running at: ${API_BASE}</p>
+            </div>
+        `;
+    }
+}
+
+/* =========================
+   DISPLAY JOBS
+========================= */
+function displayJobs(jobs) {
+    const container = document.getElementById('jobsContainer');
+    
+    if (jobs.length === 0) {
+        container.innerHTML = `
+            <div class="loading">
+                <h3>No jobs found</h3>
+                <p>Try searching with different keywords</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const jobCards = jobs.map(job => createJobCard(job)).join('');
+    
+    // Add features card at the end
+    container.innerHTML = jobCards + `
+        <div class="features-card">
+            <h3 class="features-title">Platform Features</h3>
+            
+            <div class="feature-item">
+                <div class="feature-icon">🤖</div>
+                <div class="feature-content">
+                    <h4>85% ML Matching Accuracy</h4>
+                    <p>AI-powered job recommendations</p>
+                </div>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">📄</div>
+                <div class="feature-content">
+                    <h4>NLP Resume Parsing</h4>
+                    <p>Automatic skill extraction</p>
+                </div>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-content">
+                    <h4>40% Faster Job Search</h4>
+                    <p>Real-time notifications</p>
+                </div>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">☁️</div>
+                <div class="feature-content">
+                    <h4>Cloud-Native Architecture</h4>
+                    <p>Scalable and reliable</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Attach event listeners to new cards
+    attachEventListeners();
+}
+
+/* =========================
+   CREATE JOB CARD
+========================= */
+function createJobCard(job) {
+    const matchScore = Math.floor(Math.random() * 30) + 70; // Random 70-100
+    const matchClass = matchScore >= 85 ? 'match-high' : 'match-medium';
+    
+    const daysAgo = calculateDaysAgo(job.postedDate);
+    
+    const skillTags = job.skills.slice(0, 5).map(skill => 
+        `<span class="skill-tag">${skill}</span>`
+    ).join('');
+    
+    return `
+        <div class="job-card" data-job-id="${job.id}">
+            <div class="job-header">
+                <div>
+                    <div class="job-title">${job.title}</div>
+                    <div class="company">${job.company}</div>
+                    <div class="job-meta">📍 ${job.location} • 🕒 ${daysAgo}</div>
+                </div>
+                <div class="match-badge ${matchClass}">${matchScore}% Match</div>
+            </div>
+            
+            <div class="skills">
+                ${skillTags}
+            </div>
+            
+            <p class="job-description">
+                ${job.description}
+            </p>
+            
+            <div class="job-footer">
+                <span class="salary">💰 ${job.salaryRange || 'Not disclosed'}</span>
+                <button class="apply-btn" data-job-id="${job.id}">Apply Now</button>
+            </div>
+        </div>
+    `;
+}
+
+/* =========================
+   CALCULATE DAYS AGO
+========================= */
+function calculateDaysAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return '1 day ago';
+    return `${diffDays} days ago`;
+}
 
 /* =========================
    SEARCH FUNCTIONALITY
 ========================= */
-const searchInput = document.querySelector(".search-input");
-const jobCards = document.querySelectorAll(".job-card");
-
-searchInput.addEventListener("keyup", () => {
-  const query = searchInput.value.toLowerCase();
-
-  jobCards.forEach(card => {
-    const text = card.innerText.toLowerCase();
-    card.style.display = text.includes(query) ? "block" : "none";
-  });
-});
+function setupSearch() {
+    const searchInput = document.getElementById('searchInput');
+    const filterBtn = document.querySelector('.filter-btn');
+    
+    const performSearch = () => {
+        const query = searchInput.value.toLowerCase().trim();
+        
+        if (query === '') {
+            displayJobs(allJobs);
+            return;
+        }
+        
+        const filteredJobs = allJobs.filter(job => {
+            return job.title.toLowerCase().includes(query) ||
+                   job.company.toLowerCase().includes(query) ||
+                   job.location.toLowerCase().includes(query) ||
+                   job.skills.some(skill => skill.toLowerCase().includes(query)) ||
+                   job.description.toLowerCase().includes(query);
+        });
+        
+        console.log(`🔍 Search "${query}" found ${filteredJobs.length} jobs`);
+        displayJobs(filteredJobs);
+    };
+    
+    searchInput.addEventListener('input', performSearch);
+    filterBtn.addEventListener('click', performSearch);
+    
+    // Search on Enter key
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+}
 
 /* =========================
-   FILTER BUTTON
+   EVENT LISTENERS
 ========================= */
-document.querySelector(".filter-btn").addEventListener("click", () => {
-  alert("🔍 Filter logic will be added next (working button)");
-});
+function attachEventListeners() {
+    // Apply buttons
+    document.querySelectorAll('.apply-btn').forEach(button => {
+        button.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const jobId = e.target.getAttribute('data-job-id');
+            await applyToJob(jobId);
+        });
+    });
+    
+    // Job card clicks (show details)
+    document.querySelectorAll('.job-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('apply-btn')) {
+                const jobId = card.getAttribute('data-job-id');
+                showJobDetails(jobId);
+            }
+        });
+    });
+}
 
 /* =========================
-   APPLY BUTTONS
+   APPLY TO JOB
 ========================= */
-document.querySelectorAll(".apply-btn").forEach(button => {
-  button.addEventListener("click", (e) => {
-    e.stopPropagation();
-
-    const jobTitle =
-      e.target.closest(".job-card").querySelector(".job-title").innerText;
-
-    alert(`✅ Applied successfully for: ${jobTitle}`);
-  });
-});
+async function applyToJob(jobId) {
+    try {
+        const response = await fetch(`${API_BASE}/jobs/${jobId}/apply`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Application failed');
+        }
+        
+        const message = await response.text();
+        
+        const job = allJobs.find(j => j.id === jobId);
+        const jobTitle = job ? job.title : 'this position';
+        
+        alert(`✅ ${message}\n\nJob: ${jobTitle}`);
+        
+    } catch (error) {
+        console.error("❌ Error applying to job:", error);
+        alert("⚠️ Application failed. Please try again.");
+    }
+}
 
 /* =========================
-   JOB CARD CLICK
+   SHOW JOB DETAILS
 ========================= */
-jobCards.forEach(card => {
-  card.addEventListener("click", () => {
-    const title = card.querySelector(".job-title").innerText;
-    alert(`📄 Job Details: ${title}`);
-  });
+function showJobDetails(jobId) {
+    const job = allJobs.find(j => j.id === jobId);
+    
+    if (!job) return;
+    
+    const details = `
+📋 Job Details:
+━━━━━━━━━━━━━━━━━━━━━━
+🎯 ${job.title}
+🏢 ${job.company}
+📍 ${job.location}
+💼 ${job.type || 'Full-time'}
+💰 ${job.salaryRange || 'Not disclosed'}
+
+📝 Description:
+${job.description}
+
+🛠️ Required Skills:
+${job.skills.join(', ')}
+
+${job.requirements ? '📌 Requirements:\n' + job.requirements.join('\n') : ''}
+
+Click "Apply Now" to submit your application!
+    `;
+    
+    alert(details);
+}
+
+/* =========================
+   INITIALIZE ON PAGE LOAD
+========================= */
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("🚀 Smart Hire Portal Initialized");
+    loadJobs();
+    setupSearch();
 });
 </script>
 
