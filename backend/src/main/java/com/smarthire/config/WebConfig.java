@@ -1,4 +1,3 @@
-
 package com.smarthire.config;
 
 import org.springframework.beans.factory.annotation.Value;
