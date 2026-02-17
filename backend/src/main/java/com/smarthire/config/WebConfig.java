@@ -1,3 +1,4 @@
+
 package com.smarthire.config;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -8,21 +9,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    // IMPORTANT: Reading from the new environment variable set on Render
-    @Value("${CORS_ALLOWED_ORIGINS}")
+    // The :http://... part is a default value. It prevents the crash if the property is missing!
+    @Value("${cors.allowed-origins:http://localhost:3000}") 
     private String allowedOrigins;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        
-        // This splits your comma-separated string (e.g., frontend.com,localhost:3000)
-        String[] origins = allowedOrigins.split(",");
-
-        registry.addMapping("/**") // Maps to all endpoints, including /api
-                .allowedOrigins(origins)
+        registry.addMapping("/api/**")
+                // Split by comma in case you have multiple URLs in application.properties
+                .allowedOrigins(allowedOrigins.split(",")) 
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .allowCredentials(false)
-                .maxAge(3600);
+                .allowCredentials(true);
     }
 }
