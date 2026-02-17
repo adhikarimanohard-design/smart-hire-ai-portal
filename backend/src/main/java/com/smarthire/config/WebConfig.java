@@ -8,7 +8,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    // ✅ FIX: Added ":*" as a default. If the variable is missing, it allows ALL origins.
+    // Default to "*" (allow all) if the variable is missing
     @Value("${CORS_ALLOWED_ORIGINS:*}") 
     private String allowedOrigins;
 
@@ -17,10 +17,12 @@ public class WebConfig implements WebMvcConfigurer {
         String[] origins = allowedOrigins.split(",");
 
         registry.addMapping("/**")
-                .allowedOrigins(origins)
+                // ✅ FIX: Use allowedOriginPatterns instead of allowedOrigins
+                // This allows "*" to work even when allowCredentials is true!
+                .allowedOriginPatterns(origins) 
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .allowCredentials(true) // Changed to true so cookies/headers work
+                .allowCredentials(true)
                 .maxAge(3600);
     }
 }
