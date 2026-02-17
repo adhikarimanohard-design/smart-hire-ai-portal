@@ -1,4 +1,4 @@
-package main.java.com.smarthire.dto;
+package com.smarthire.dto;
 
 import java.time.LocalDateTime;
 
