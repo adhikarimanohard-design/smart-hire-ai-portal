@@ -9,16 +9,15 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors() // ✅ VERY IMPORTANT
-            .and()
-            .csrf().disable()
+            .csrf(csrf -> csrf.disable())       // Disable CSRF
+            .cors(cors -> {})                   // Enable CORS
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/**").permitAll()
-                .anyRequest().permitAll()
-            );
+                .requestMatchers("/api/**").permitAll() // Allow all /api/** endpoints
+                .anyRequest().authenticated()           // Secure other endpoints
+            )
+            .httpBasic(); // Optional: use basic auth for secured endpoints
 
         return http.build();
     }
