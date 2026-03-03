@@ -37,6 +37,7 @@ public class User {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
         this.active = true;
+        this.resumeUploaded = false;
     }
 
     // Getters and Setters
