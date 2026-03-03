@@ -14,6 +14,12 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
     
+@Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
