@@ -1,5 +1,12 @@
 package com.smarthire.service;
 
+import com.smarthire.config.JwtUtil;
+import com.smarthire.dto.AuthResponse;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import com.smarthire.model.User;
 import com.smarthire.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
