@@ -45,4 +45,35 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.ok().build();
     }
+@PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody User user) {
+        try {
+            com.smarthire.dto.AuthResponse response = userService.register(user);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody User user) {
+        try {
+            com.smarthire.dto.AuthResponse response = userService.login(user.getEmail(), user.getPassword());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/resume/upload")
+    public ResponseEntity<?> uploadResume(
+            @PathVariable String id,
+            @RequestParam("resume") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            User updated = userService.uploadResume(id, file);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
