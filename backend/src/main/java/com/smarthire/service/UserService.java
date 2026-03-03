@@ -69,4 +69,43 @@ User user = getUserById(id);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
     }
+public AuthResponse register(User user) {
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new RuntimeException("Email already registered");
+        }
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        User saved = userRepository.save(user);
+        String token = jwtUtil.generateToken(saved.getEmail());
+        return new AuthResponse(token, saved.getEmail(), 
+                saved.getFirstName(), saved.getLastName(), 
+                saved.getId(), saved.getRole());
+    }
+
+    public AuthResponse login(String email, String password) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("Invalid password");
+        }
+        String token = jwtUtil.generateToken(user.getEmail());
+        return new AuthResponse(token, user.getEmail(),
+                user.getFirstName(), user.getLastName(),
+                user.getId(), user.getRole());
+    }
+
+    public User uploadResume(String id, MultipartFile file) throws Exception {
+        User user = getUserById(id);
+        String uploadDir = "uploads/resumes/";
+        Files.createDirectories(Paths.get(uploadDir));
+        String fileName = id + "_" + file.getOriginalFilename();
+        Path filePath = Paths.get(uploadDir + fileName);
+        Files.write(filePath, file.getBytes());
+        user.setResumeUrl(filePath.toString());
+        user.setResumeName(file.getOriginalFilename());
+        user.setResumeUploaded(true);
+        user.setUpdatedAt(LocalDateTime.now());
+        return userRepository.save(user);
+    }
 }
