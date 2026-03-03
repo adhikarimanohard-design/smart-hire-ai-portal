@@ -27,6 +27,11 @@ public class User {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private boolean active;
+    private String password;
+    private String firstName;
+    private String lastName;
+    private String resumeName;
+    private boolean resumeUploaded;
 
     public User() {
         this.createdAt = LocalDateTime.now();
