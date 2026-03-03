@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMART HIRE — AI-Powered Job Portal</title>
+    <title>SMART HIRE \u2014 AI-Powered Job Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -83,6 +83,9 @@
         .logo-name span { color: var(--accent); }
         .logo-sub { font-size:11px; color:var(--text-muted); margin-top:1px; }
 
+        /* HEADER RIGHT */
+        .header-right { display:flex; align-items:center; gap:12px; }
+
         .live-badge {
             display:flex; align-items:center; gap:7px;
             background: rgba(74,222,128,0.08);
@@ -98,9 +101,72 @@
         }
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
 
-        /* MAIN CONTENT */
-        main { position:relative; z-index:1; padding-top: 68px; }
+        /* LOGIN BUTTON */
+        .login-btn {
+            background: transparent;
+            border: 1px solid var(--border-bright);
+            border-radius: 10px;
+            padding: 8px 18px;
+            color: var(--text);
+            font-family: 'Syne', sans-serif;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex; align-items: center; gap: 7px;
+        }
+        .login-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(56,189,248,0.06);
+        }
 
+        /* USER AVATAR (logged in) */
+        .user-avatar {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent), #1d6cf5);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; font-weight: 700;
+            font-family: 'Syne', sans-serif;
+            cursor: pointer;
+            border: 2px solid rgba(56,189,248,0.3);
+            transition: all 0.2s;
+            position: relative;
+        }
+        .user-avatar:hover { box-shadow: 0 0 16px rgba(56,189,248,0.4); }
+
+        .user-menu {
+            position: absolute; top: calc(100% + 10px); right: 0;
+            background: var(--surface);
+            border: 1px solid var(--border-bright);
+            border-radius: 14px; padding: 8px;
+            min-width: 200px;
+            z-index: 200;
+            opacity: 0; pointer-events: none;
+            transform: translateY(-8px);
+            transition: all 0.2s ease;
+        }
+        .user-menu.open { opacity:1; pointer-events:all; transform:translateY(0); }
+
+        .user-menu-header {
+            padding: 10px 12px 12px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 6px;
+        }
+        .user-menu-name { font-weight: 600; font-size: 14px; color: var(--text); }
+        .user-menu-email { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+        .user-menu-item {
+            display: flex; align-items: center; gap: 9px;
+            padding: 9px 12px; border-radius: 8px;
+            font-size: 13px; color: var(--text-muted);
+            cursor: pointer; transition: all 0.15s;
+        }
+        .user-menu-item:hover { background: var(--surface2); color: var(--text); }
+        .user-menu-item.danger:hover { color: var(--accent2); background: rgba(244,114,182,0.06); }
+
+        /* MAIN */
+        main { position:relative; z-index:1; padding-top: 68px; }
         .container { max-width:1280px; margin:0 auto; padding: 0 clamp(16px, 4vw, 48px); }
 
         /* HERO */
@@ -169,7 +235,6 @@
             box-shadow: 0 12px 40px rgba(56,189,248,0.1);
         }
         .stat-icon { font-size: 24px; }
-        .stat-info {}
         .stat-num {
             font-family: 'Syne', sans-serif;
             font-size: clamp(20px, 3vw, 28px);
@@ -183,9 +248,7 @@
         .stat-label { font-size:12px; color:var(--text-muted); margin-top:3px; }
 
         /* SEARCH */
-        .search-wrap {
-            max-width: 760px; margin: 0 auto clamp(40px, 6vw, 60px);
-        }
+        .search-wrap { max-width: 760px; margin: 0 auto clamp(40px, 6vw, 60px); }
 
         .search-box {
             display: flex;
@@ -194,7 +257,6 @@
             border-radius: 16px;
             overflow: hidden;
             transition: all 0.3s ease;
-            box-shadow: 0 0 0 0 rgba(56,189,248,0);
         }
         .search-box:focus-within {
             border-color: var(--accent);
@@ -223,8 +285,7 @@
             border: none; cursor: pointer;
             color: white;
             font-family: 'Syne', sans-serif;
-            font-weight: 700;
-            font-size: 14px;
+            font-weight: 700; font-size: 14px;
             padding: 0 clamp(20px, 3vw, 32px);
             letter-spacing: 0.5px;
             transition: all 0.3s ease;
@@ -247,6 +308,57 @@
             border-color: var(--accent);
             color: var(--accent);
             background: rgba(56,189,248,0.1);
+        }
+
+        /* RESUME UPLOAD BANNER */
+        .resume-banner {
+            background: linear-gradient(135deg, rgba(56,189,248,0.06), rgba(29,108,245,0.04));
+            border: 1px solid var(--border-bright);
+            border-radius: 20px;
+            padding: clamp(18px, 3vw, 28px) clamp(20px, 3vw, 32px);
+            margin-bottom: clamp(28px, 4vw, 40px);
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 20px; flex-wrap: wrap;
+            position: relative; overflow: hidden;
+        }
+        .resume-banner::before {
+            content: '';
+            position: absolute; top:0; left:0; right:0; height:1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+        .resume-banner-left { display:flex; align-items:center; gap:16px; }
+        .resume-banner-icon {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, rgba(56,189,248,0.15), rgba(29,108,245,0.1));
+            border: 1px solid rgba(56,189,248,0.2);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; flex-shrink: 0;
+        }
+        .resume-banner-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(14px, 2vw, 17px);
+            font-weight: 700; color: var(--text); margin-bottom: 3px;
+        }
+        .resume-banner-sub { font-size: 12px; color: var(--text-muted); }
+
+        .resume-upload-btn {
+            background: linear-gradient(135deg, var(--accent), #1d6cf5);
+            border: none; cursor: pointer; color: white;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700; font-size: 13px;
+            padding: 11px 22px; border-radius: 10px;
+            transition: all 0.3s ease;
+            display: flex; align-items: center; gap: 8px;
+            white-space: nowrap; flex-shrink: 0;
+        }
+        .resume-upload-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(56,189,248,0.35);
+            filter: brightness(1.1);
+        }
+        .resume-upload-btn.uploaded {
+            background: linear-gradient(135deg, var(--accent3), #16a34a);
         }
 
         /* SECTION HEADER */
@@ -282,12 +394,10 @@
             padding: clamp(20px, 3vw, 28px);
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+            position: relative; overflow: hidden;
         }
         .job-card::before {
-            content:'';
-            position:absolute; inset:0;
+            content:''; position:absolute; inset:0;
             background: linear-gradient(135deg, rgba(56,189,248,0.03), transparent);
             opacity:0; transition: opacity 0.3s;
         }
@@ -300,13 +410,9 @@
 
         .job-card-top {
             display:flex; justify-content:space-between;
-            align-items:flex-start; gap:12px;
-            margin-bottom: 16px;
+            align-items:flex-start; gap:12px; margin-bottom: 16px;
         }
-
-        .job-company-row {
-            display:flex; align-items:center; gap:12px;
-        }
+        .job-company-row { display:flex; align-items:center; gap:12px; }
         .company-logo {
             width: 44px; height:44px;
             background: linear-gradient(135deg, var(--surface2), var(--surface));
@@ -315,7 +421,6 @@
             display:flex; align-items:center; justify-content:center;
             font-size: 20px; flex-shrink:0;
         }
-        .job-meta-info {}
         .job-title {
             font-family: 'Syne', sans-serif;
             font-size: clamp(15px, 2vw, 18px);
@@ -325,11 +430,9 @@
         .job-company { font-size:13px; color:var(--accent); font-weight:500; }
 
         .match-badge {
-            flex-shrink:0;
-            padding: 6px 14px; border-radius:20px;
+            flex-shrink:0; padding: 6px 14px; border-radius:20px;
             font-size: 12px; font-weight:700;
-            font-family: 'Syne', sans-serif;
-            white-space: nowrap;
+            font-family: 'Syne', sans-serif; white-space: nowrap;
         }
         .match-fire { background:rgba(74,222,128,0.1); color:var(--accent3); border:1px solid rgba(74,222,128,0.2); }
         .match-hot { background:rgba(56,189,248,0.1); color:var(--accent); border:1px solid rgba(56,189,248,0.2); }
@@ -339,37 +442,26 @@
             display:flex; align-items:center; gap:16px;
             margin-bottom: 14px; flex-wrap:wrap;
         }
-        .job-loc, .job-type, .job-time {
-            display:flex; align-items:center; gap:5px;
-            font-size: 12px; color: var(--text-muted);
-        }
+        .job-loc, .job-type, .job-time { display:flex; align-items:center; gap:5px; font-size: 12px; color: var(--text-muted); }
 
-        .skills-row {
-            display:flex; flex-wrap:wrap; gap:7px;
-            margin-bottom: 16px;
-        }
+        .skills-row { display:flex; flex-wrap:wrap; gap:7px; margin-bottom: 16px; }
         .skill-tag {
             background: rgba(56,189,248,0.06);
             border: 1px solid rgba(56,189,248,0.12);
             border-radius: 6px; padding: 4px 10px;
-            font-size: 11px; color: #7dd3fc;
-            font-weight:500;
+            font-size: 11px; color: #7dd3fc; font-weight:500;
         }
 
         .job-desc {
             font-size: 13px; color: var(--text-muted);
             line-height:1.6; margin-bottom:18px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+            display: -webkit-box; -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical; overflow: hidden;
         }
 
         .job-card-bottom {
             display:flex; justify-content:space-between; align-items:center;
-            padding-top: 16px;
-            border-top: 1px solid var(--border);
-            gap:12px;
+            padding-top: 16px; border-top: 1px solid var(--border); gap:12px;
         }
         .job-salary {
             font-family: 'Syne', sans-serif;
@@ -380,14 +472,11 @@
 
         .apply-btn {
             background: linear-gradient(135deg, var(--accent), #1d6cf5);
-            border: none; cursor:pointer;
-            color: white;
+            border: none; cursor:pointer; color: white;
             font-family: 'Syne', sans-serif;
             font-weight: 700; font-size: 13px;
             padding: 10px 22px; border-radius:10px;
-            transition: all 0.3s ease;
-            letter-spacing: 0.3px;
-            white-space: nowrap;
+            transition: all 0.3s ease; letter-spacing: 0.3px; white-space: nowrap;
         }
         .apply-btn:hover {
             transform: translateY(-1px);
@@ -405,668 +494,16 @@
             position: relative; overflow:hidden;
         }
         .features-card::after {
-            content:'';
-            position:absolute; top:0; left:0; right:0; height:1px;
+            content:''; position:absolute; top:0; left:0; right:0; height:1px;
             background: linear-gradient(90deg, transparent, var(--accent), transparent);
         }
         .features-title {
             font-family: 'Syne', sans-serif;
             font-size: clamp(18px, 2vw, 22px);
-            font-weight: 800; margin-bottom:24px;
-            color: var(--text);
+            font-weight: 800; margin-bottom:24px; color: var(--text);
         }
-        .feature-item {
-            display:flex; gap:14px; margin-bottom:20px;
-            align-items:flex-start;
-        }
+        .feature-item { display:flex; gap:14px; margin-bottom:20px; align-items:flex-start; }
         .feature-item:last-child { margin-bottom:0; }
         .feat-icon {
             width:42px; height:42px; flex-shrink:0;
             background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius:10px;
-            display:flex; align-items:center; justify-content:center;
-            font-size: 20px;
-        }
-        .feat-title { font-size:14px; font-weight:600; color:var(--text); margin-bottom:3px; }
-        .feat-sub { font-size:12px; color:var(--text-muted); }
-
-        /* LOADING & ERROR */
-        .loading-state {
-            grid-column: 1/-1;
-            display:flex; flex-direction:column; align-items:center;
-            justify-content:center; padding:80px 20px; gap:20px;
-        }
-        .loading-spinner {
-            width:48px; height:48px;
-            border: 2px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius:50%;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform:rotate(360deg); } }
-        .loading-text { color:var(--text-muted); font-size:14px; }
-
-        .no-results {
-            grid-column: 1/-1;
-            text-align:center; padding:80px 20px;
-        }
-        .no-results-emoji { font-size:48px; margin-bottom:16px; }
-        .no-results h3 { font-family:'Syne',sans-serif; font-size:20px; margin-bottom:8px; }
-        .no-results p { color:var(--text-muted); font-size:14px; }
-
-        .error-state {
-            grid-column: 1/-1;
-            background: rgba(244,114,182,0.06);
-            border: 1px solid rgba(244,114,182,0.2);
-            border-radius:16px; padding:40px;
-            text-align:center;
-        }
-        .error-state h3 { color:var(--accent2); font-family:'Syne',sans-serif; margin-bottom:8px; }
-        .error-state p { color:var(--text-muted); font-size:13px; }
-
-        /* MODAL */
-        .modal-overlay {
-            position:fixed; inset:0; z-index:200;
-            background: rgba(3,7,18,0.9);
-            backdrop-filter: blur(12px);
-            display:flex; align-items:center; justify-content:center;
-            padding: 20px;
-            opacity:0; pointer-events:none;
-            transition: opacity 0.3s ease;
-        }
-        .modal-overlay.open {
-            opacity:1; pointer-events:all;
-        }
-        .modal {
-            background: var(--surface);
-            border: 1px solid var(--border-bright);
-            border-radius: 24px;
-            width: 100%; max-width:600px;
-            max-height: 85vh; overflow-y:auto;
-            position:relative;
-            transform: translateY(20px) scale(0.97);
-            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-        }
-        .modal-overlay.open .modal {
-            transform: translateY(0) scale(1);
-        }
-        .modal-header {
-            padding: clamp(20px,3vw,32px);
-            border-bottom: 1px solid var(--border);
-            position:sticky; top:0;
-            background: var(--surface);
-            border-radius: 24px 24px 0 0;
-            display:flex; justify-content:space-between; align-items:flex-start;
-        }
-        .modal-close {
-            width:36px; height:36px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius:50%; cursor:pointer;
-            display:flex; align-items:center; justify-content:center;
-            color: var(--text-muted); font-size:18px;
-            transition: all 0.2s; flex-shrink:0;
-        }
-        .modal-close:hover { border-color:var(--accent2); color:var(--accent2); }
-
-        .modal-body { padding: clamp(20px,3vw,32px); }
-        .modal-company { font-size:14px; color:var(--accent); margin-bottom:6px; font-weight:500; }
-        .modal-title {
-            font-family:'Syne',sans-serif;
-            font-size:clamp(20px,3vw,26px); font-weight:800;
-            margin-bottom:4px; line-height:1.2;
-        }
-        .modal-location { font-size:13px; color:var(--text-muted); margin-bottom:20px; }
-        .modal-section { margin-bottom:20px; }
-        .modal-section-title {
-            font-size:11px; letter-spacing:1.5px;
-            text-transform:uppercase; color:var(--text-muted);
-            margin-bottom:10px; font-weight:600;
-        }
-        .modal-desc { font-size:14px; color:var(--text-muted); line-height:1.7; }
-        .modal-skills { display:flex; flex-wrap:wrap; gap:8px; }
-        .modal-skill {
-            background: rgba(56,189,248,0.08);
-            border: 1px solid rgba(56,189,248,0.15);
-            border-radius:8px; padding:6px 12px;
-            font-size:12px; color:#7dd3fc; font-weight:500;
-        }
-        .modal-reqs { list-style:none; }
-        .modal-reqs li {
-            font-size:13px; color:var(--text-muted);
-            padding: 6px 0; border-bottom:1px solid var(--border);
-            display:flex; gap:8px; align-items:center;
-        }
-        .modal-reqs li::before { content:'→'; color:var(--accent); }
-        .modal-footer {
-            padding: clamp(16px,2vw,24px) clamp(20px,3vw,32px);
-            border-top: 1px solid var(--border);
-            display:flex; justify-content:space-between; align-items:center;
-            flex-wrap:wrap; gap:12px;
-        }
-        .modal-salary {
-            font-family:'Syne',sans-serif; font-size:22px; font-weight:800;
-        }
-        .modal-salary span { color:var(--accent3); }
-        .modal-apply-btn {
-            background: linear-gradient(135deg, var(--accent), #1d6cf5);
-            border:none; cursor:pointer; color:white;
-            font-family:'Syne',sans-serif; font-weight:700; font-size:15px;
-            padding:14px 32px; border-radius:12px;
-            transition:all 0.3s;
-        }
-        .modal-apply-btn:hover {
-            box-shadow: 0 8px 30px rgba(56,189,248,0.4);
-            filter:brightness(1.1); transform:translateY(-2px);
-        }
-
-        /* FOOTER */
-        footer {
-            position:relative; z-index:1;
-            border-top: 1px solid var(--border);
-            padding: clamp(32px,5vw,60px) clamp(16px,4vw,48px);
-            text-align:center;
-        }
-        .footer-logo {
-            font-family:'Syne',sans-serif; font-size:28px; font-weight:800;
-            margin-bottom:8px;
-        }
-        .footer-logo span { color:var(--accent); }
-        .footer-sub { font-size:13px; color:var(--text-muted); margin-bottom:24px; }
-        .footer-stack {
-            display:flex; flex-wrap:wrap; gap:10px;
-            justify-content:center; margin-bottom:24px;
-        }
-        .stack-pill {
-            background:var(--surface);
-            border:1px solid var(--border);
-            border-radius:20px; padding:6px 16px;
-            font-size:12px; color:var(--text-muted);
-        }
-        .footer-credit { font-size:12px; color:var(--text-dim); }
-
-        /* TOAST */
-        .toast {
-            position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px);
-            background:var(--surface2); border:1px solid var(--accent3);
-            border-radius:12px; padding:14px 24px;
-            font-size:14px; font-weight:500; color:var(--accent3);
-            z-index:300; opacity:0; pointer-events:none;
-            transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
-            white-space:nowrap; max-width:90vw;
-            box-shadow: 0 8px 32px rgba(74,222,128,0.2);
-        }
-        .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-
-        /* SCROLLBAR */
-        ::-webkit-scrollbar { width:6px; }
-        ::-webkit-scrollbar-track { background:var(--bg); }
-        ::-webkit-scrollbar-thumb { background:var(--surface2); border-radius:3px; }
-        ::-webkit-scrollbar-thumb:hover { background:var(--text-dim); }
-
-        /* MOBILE */
-        @media (max-width:640px) {
-            .stats-row { gap:10px; }
-            .stat-pill { padding:12px 16px; }
-            .jobs-grid { grid-template-columns:1fr; }
-            .search-btn span { display:none; }
-            .search-btn::after { content:'→'; }
-        }
-
-        /* ANIMATIONS */
-        @keyframes fadeUp {
-            from { opacity:0; transform:translateY(20px); }
-            to { opacity:1; transform:translateY(0); }
-        }
-        .fade-up { animation: fadeUp 0.5s ease forwards; opacity:0; }
-        .delay-1 { animation-delay:0.1s; }
-        .delay-2 { animation-delay:0.2s; }
-        .delay-3 { animation-delay:0.3s; }
-        .delay-4 { animation-delay:0.4s; }
-    </style>
-</head>
-<body>
-
-<!-- BG -->
-<div class="bg-grid"></div>
-<div class="bg-orb orb1"></div>
-<div class="bg-orb orb2"></div>
-<div class="bg-orb orb3"></div>
-
-<!-- HEADER -->
-<header>
-    <a class="logo" href="#">
-        <div class="logo-icon">💼</div>
-        <div>
-            <div class="logo-name">SMART<span>HIRE</span></div>
-            <div class="logo-sub">AI-Powered Job Portal</div>
-        </div>
-    </a>
-    <div class="live-badge">
-        <div class="live-dot"></div>
-        Live
-    </div>
-</header>
-
-<!-- MAIN -->
-<main>
-<div class="container">
-
-    <!-- HERO -->
-    <div class="hero">
-        <div class="hero-eyebrow fade-up">✦ AI-Powered Matching Platform</div>
-        <h1 class="fade-up delay-1">
-            <span class="line1">Find Your Dream</span>
-            <span class="line2">Career Match</span>
-        </h1>
-        <p class="hero-sub fade-up delay-2">
-            85% accurate AI matching connects you with jobs that fit your skills perfectly. 10,000+ opportunities updated in real-time.
-        </p>
-
-        <!-- STATS -->
-        <div class="stats-row fade-up delay-3">
-            <div class="stat-pill">
-                <span class="stat-icon">💼</span>
-                <div class="stat-info">
-                    <div class="stat-num accent" id="stat-jobs">—</div>
-                    <div class="stat-label">Active Jobs</div>
-                </div>
-            </div>
-            <div class="stat-pill">
-                <span class="stat-icon">👥</span>
-                <div class="stat-info">
-                    <div class="stat-num pink">45,678</div>
-                    <div class="stat-label">Candidates</div>
-                </div>
-            </div>
-            <div class="stat-pill">
-                <span class="stat-icon">🎯</span>
-                <div class="stat-info">
-                    <div class="stat-num green">85%</div>
-                    <div class="stat-label">Match Rate</div>
-                </div>
-            </div>
-            <div class="stat-pill">
-                <span class="stat-icon">✅</span>
-                <div class="stat-info">
-                    <div class="stat-num gold">2,341</div>
-                    <div class="stat-label">Placements</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SEARCH -->
-        <div class="search-wrap fade-up delay-4">
-            <div class="search-box">
-                <div class="search-icon">🔍</div>
-                <input
-                    type="text"
-                    class="search-input"
-                    id="searchInput"
-                    placeholder="Search jobs, companies, skills..."
-                    autocomplete="off"
-                >
-                <button class="search-btn" onclick="triggerSearch()">
-                    <span>Search</span>
-                </button>
-            </div>
-            <div class="search-tags">
-                <span class="search-tag" onclick="quickSearch('Java')">Java</span>
-                <span class="search-tag" onclick="quickSearch('Python')">Python</span>
-                <span class="search-tag" onclick="quickSearch('React')">React</span>
-                <span class="search-tag" onclick="quickSearch('AWS')">AWS</span>
-                <span class="search-tag" onclick="quickSearch('Remote')">Remote</span>
-                <span class="search-tag" onclick="quickSearch('ML')">ML</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- JOBS SECTION -->
-    <div class="section-header">
-        <div class="section-title">Open Positions</div>
-        <div class="section-count" id="jobCount">Loading...</div>
-    </div>
-
-    <div class="jobs-grid" id="jobsGrid">
-        <div class="loading-state">
-            <div class="loading-spinner"></div>
-            <div class="loading-text">Fetching jobs from database...</div>
-        </div>
-    </div>
-
-</div>
-</main>
-
-<!-- MODAL -->
-<div class="modal-overlay" id="modal" onclick="closeModal(event)">
-    <div class="modal" id="modalContent">
-        <!-- filled by JS -->
-    </div>
-</div>
-
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
-
-<!-- FOOTER -->
-<footer>
-    <div class="footer-logo">SMART<span>HIRE</span></div>
-    <div class="footer-sub">AI-Powered Placement Portal • Built for the Future</div>
-    <div class="footer-stack">
-        <span class="stack-pill">⚡ Spring Boot</span>
-        <span class="stack-pill">🍃 MongoDB</span>
-        <span class="stack-pill">☁️ Render</span>
-        <span class="stack-pill">📄 HTML/CSS/JS</span>
-        <span class="stack-pill">🤖 AI Matching</span>
-    </div>
-    <div class="footer-credit">Personal Project by Adhikari Manohar • 2025</div>
-</footer>
-
-<script>
-/* ================================
-   CONFIG
-================================ */
-const API_BASE = 'https://smart-hire-ai-portal-2-d0rz.onrender.com/api';
-
-/* ================================
-   STATE
-================================ */
-let allJobs = [];
-let currentJob = null;
-
-/* ================================
-   COMPANY EMOJIS
-================================ */
-const COMPANY_EMOJIS = {
-    'tech': '💻', 'cloud': '☁️', 'ai': '🤖', 'data': '📊',
-    'design': '🎨', 'mobile': '📱', 'security': '🔐',
-    'product': '🚀', 'server': '🖥️', 'analytics': '📈',
-    'default': ['🏢','💼','🌐','⚡','🔷','🌟','🎯','💡']
-};
-
-function getCompanyEmoji(company) {
-    const lower = company.toLowerCase();
-    for (const [key, val] of Object.entries(COMPANY_EMOJIS)) {
-        if (key !== 'default' && lower.includes(key)) return val;
-    }
-    const arr = COMPANY_EMOJIS.default;
-    return arr[company.charCodeAt(0) % arr.length];
-}
-
-/* ================================
-   LOAD JOBS
-================================ */
-async function loadJobs() {
-    try {
-        const res = await fetch(`${API_BASE}/jobs`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        allJobs = await res.json();
-        document.getElementById('stat-jobs').textContent = allJobs.length;
-        renderJobs(allJobs);
-    } catch (err) {
-        console.error('Failed to load jobs:', err);
-        document.getElementById('jobsGrid').innerHTML = `
-            <div class="error-state">
-                <h3>⚠️ Could not load jobs</h3>
-                <p>Backend may be waking up. Please refresh in 30 seconds.</p>
-                <p style="margin-top:8px;font-size:12px;color:var(--text-dim)">${err.message}</p>
-            </div>`;
-        document.getElementById('jobCount').textContent = 'Error';
-    }
-}
-
-/* ================================
-   RENDER JOBS
-================================ */
-function renderJobs(jobs) {
-    const grid = document.getElementById('jobsGrid');
-    document.getElementById('jobCount').textContent = `${jobs.length} position${jobs.length !== 1 ? 's' : ''}`;
-
-    if (jobs.length === 0) {
-        grid.innerHTML = `
-            <div class="no-results">
-                <div class="no-results-emoji">🔭</div>
-                <h3>No positions found</h3>
-                <p>Try different keywords or browse all jobs</p>
-            </div>`;
-        return;
-    }
-
-    grid.innerHTML = jobs.map(job => jobCardHTML(job)).join('') + featuresCardHTML();
-    grid.querySelectorAll('.job-card').forEach(card => {
-        card.addEventListener('click', e => {
-            if (!e.target.closest('.apply-btn')) {
-                openModal(card.dataset.jobId);
-            }
-        });
-    });
-    grid.querySelectorAll('.apply-btn').forEach(btn => {
-        btn.addEventListener('click', e => {
-            e.stopPropagation();
-            applyToJob(btn.dataset.jobId);
-        });
-    });
-}
-
-/* ================================
-   JOB CARD HTML
-================================ */
-function jobCardHTML(job) {
-    const score = 70 + ((job.title.length + job.company.length) % 28);
-    const matchClass = score >= 90 ? 'match-fire' : score >= 80 ? 'match-hot' : 'match-warm';
-    const matchLabel = score >= 90 ? '🔥 ' + score + '% Match' : score + '% Match';
-    const emoji = getCompanyEmoji(job.company);
-    const daysAgo = getDaysAgo(job.postedDate);
-    const skills = (job.skills || []).slice(0, 5).map(s => `<span class="skill-tag">${s}</span>`).join('');
-    const salary = job.salaryRange || 'Competitive';
-
-    return `
-    <div class="job-card" data-job-id="${job.id}">
-        <div class="job-card-top">
-            <div class="job-company-row">
-                <div class="company-logo">${emoji}</div>
-                <div class="job-meta-info">
-                    <div class="job-title">${job.title}</div>
-                    <div class="job-company">${job.company}</div>
-                </div>
-            </div>
-            <div class="match-badge ${matchClass}">${matchLabel}</div>
-        </div>
-        <div class="job-location-row">
-            <span class="job-loc">📍 ${job.location}</span>
-            <span class="job-type">💼 ${job.type || 'Full-time'}</span>
-            <span class="job-time">🕒 ${daysAgo}</span>
-        </div>
-        <div class="skills-row">${skills}</div>
-        <p class="job-desc">${job.description}</p>
-        <div class="job-card-bottom">
-            <div class="job-salary"><span>${salary}</span></div>
-            <button class="apply-btn" data-job-id="${job.id}">Apply Now →</button>
-        </div>
-    </div>`;
-}
-
-/* ================================
-   FEATURES CARD
-================================ */
-function featuresCardHTML() {
-    return `
-    <div class="features-card">
-        <div class="features-title">✦ Platform Capabilities</div>
-        <div class="feature-item">
-            <div class="feat-icon">🤖</div>
-            <div>
-                <div class="feat-title">85% ML Matching Accuracy</div>
-                <div class="feat-sub">AI-powered job recommendations tailored to your profile</div>
-            </div>
-        </div>
-        <div class="feature-item">
-            <div class="feat-icon">📄</div>
-            <div>
-                <div class="feat-title">NLP Resume Parsing</div>
-                <div class="feat-sub">Automatic skill extraction from your resume</div>
-            </div>
-        </div>
-        <div class="feature-item">
-            <div class="feat-icon">⚡</div>
-            <div>
-                <div class="feat-title">Real-Time Job Updates</div>
-                <div class="feat-sub">40% faster job search with live notifications</div>
-            </div>
-        </div>
-        <div class="feature-item">
-            <div class="feat-icon">☁️</div>
-            <div>
-                <div class="feat-title">Cloud-Native Architecture</div>
-                <div class="feat-sub">Scalable Spring Boot backend on Render</div>
-            </div>
-        </div>
-    </div>`;
-}
-
-/* ================================
-   MODAL
-================================ */
-function openModal(jobId) {
-    const job = allJobs.find(j => j.id === jobId);
-    if (!job) return;
-    currentJob = job;
-
-    const score = 70 + ((job.title.length + job.company.length) % 28);
-    const emoji = getCompanyEmoji(job.company);
-    const skills = (job.skills || []).map(s => `<span class="modal-skill">${s}</span>`).join('');
-    const reqs = (job.requirements || ['Experience in relevant field', 'Strong communication skills'])
-        .map(r => `<li>${r}</li>`).join('');
-
-    document.getElementById('modalContent').innerHTML = `
-        <div class="modal-header">
-            <div>
-                <div class="modal-company">${emoji} ${job.company}</div>
-                <div class="modal-title">${job.title}</div>
-                <div class="modal-location">📍 ${job.location} &nbsp;•&nbsp; 💼 ${job.type || 'Full-time'} &nbsp;•&nbsp; ${score}% Match</div>
-            </div>
-            <button class="modal-close" onclick="closeModalBtn()">✕</button>
-        </div>
-        <div class="modal-body">
-            <div class="modal-section">
-                <div class="modal-section-title">Description</div>
-                <div class="modal-desc">${job.description}</div>
-            </div>
-            <div class="modal-section">
-                <div class="modal-section-title">Required Skills</div>
-                <div class="modal-skills">${skills}</div>
-            </div>
-            <div class="modal-section">
-                <div class="modal-section-title">Requirements</div>
-                <ul class="modal-reqs">${reqs}</ul>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <div class="modal-salary"><span>${job.salaryRange || 'Competitive'}</span></div>
-            <button class="modal-apply-btn" onclick="applyToJob('${job.id}')">Apply Now →</button>
-        </div>`;
-
-    document.getElementById('modal').classList.add('open');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeModal(e) {
-    if (e.target === document.getElementById('modal')) {
-        closeModalBtn();
-    }
-}
-function closeModalBtn() {
-    document.getElementById('modal').classList.remove('open');
-    document.body.style.overflow = '';
-}
-
-/* ================================
-   APPLY TO JOB
-================================ */
-async function applyToJob(jobId) {
-    const job = allJobs.find(j => j.id === jobId);
-    const title = job ? job.title : 'this position';
-
-    try {
-        const res = await fetch(`${API_BASE}/jobs/${jobId}/apply`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        // Show success regardless (apply is bonus feature)
-        showToast(`✅ Applied successfully for ${title}!`);
-        closeModalBtn();
-    } catch (err) {
-        // Show success for demo - jobs loading proves backend works
-        showToast(`✅ Applied successfully for ${title}!`);
-        closeModalBtn();
-    }
-}
-
-/* ================================
-   SEARCH
-================================ */
-function triggerSearch() {
-    const q = document.getElementById('searchInput').value.toLowerCase().trim();
-    performSearch(q);
-}
-
-function quickSearch(term) {
-    document.getElementById('searchInput').value = term;
-    performSearch(term.toLowerCase());
-}
-
-function performSearch(q) {
-    if (!q) { renderJobs(allJobs); return; }
-    const filtered = allJobs.filter(job =>
-        job.title.toLowerCase().includes(q) ||
-        job.company.toLowerCase().includes(q) ||
-        job.location.toLowerCase().includes(q) ||
-        (job.skills || []).some(s => s.toLowerCase().includes(q)) ||
-        (job.description || '').toLowerCase().includes(q)
-    );
-    renderJobs(filtered);
-    window.scrollTo({ top: document.querySelector('.section-header').offsetTop - 100, behavior: 'smooth' });
-}
-
-document.getElementById('searchInput').addEventListener('input', e => {
-    performSearch(e.target.value.toLowerCase().trim());
-});
-document.getElementById('searchInput').addEventListener('keypress', e => {
-    if (e.key === 'Enter') triggerSearch();
-});
-
-/* ================================
-   TOAST
-================================ */
-function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3500);
-}
-
-/* ================================
-   HELPERS
-================================ */
-function getDaysAgo(dateStr) {
-    if (!dateStr) return 'Recently';
-    const diff = Math.floor((Date.now() - new Date(dateStr)) / 86400000);
-    if (diff <= 0) return 'Today';
-    if (diff === 1) return '1 day ago';
-    return `${diff} days ago`;
-}
-
-/* ================================
-   KEYBOARD
-================================ */
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModalBtn();
-});
-
-/* ================================
-   INIT
-================================ */
-document.addEventListener('DOMContentLoaded', loadJobs);
-</script>
-</body>
-</html>
