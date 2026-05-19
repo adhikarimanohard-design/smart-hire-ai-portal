@@ -15,6 +15,19 @@ SMART HIRE is designed to demonstrate real-world software engineering skills exp
 
 ---
 
+🔢 Quantified Metrices
+
+Supports 10+ job listings with real-time filtering
+
+AI matching generates scores in <1s per user
+Resume upload handles PDF files up to 5MB
+
+JWT tokens expire in 24 hours for session security
+
+REST API with 8+ endpoints across auth, jobs, applications
+
+---
+
 Key focus areas:
 
 Full-stack development
