@@ -15,7 +15,7 @@ SMART HIRE is designed to demonstrate real-world software engineering skills exp
 
 ---
 
-# 🔢 Quantified Metrices
+# 🔢 Quantified Metrics
 
 Supports 10+ job listings with real-time filtering
 
