@@ -175,3 +175,9 @@ Weighted scoring system
 AI-style ranking for job suggestions
 
 ---
+
+# 👨‍💻 Author
+
+**Adhikari Manohar Dash**  
+B.Tech CSE Student  
+Full Stack & AI Enthusiast
