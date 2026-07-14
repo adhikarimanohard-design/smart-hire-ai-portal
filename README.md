@@ -55,13 +55,11 @@ Backend (Render): Spring Boot REST API server
 
 👨‍💻 FRONTEND
 
-HTML5
+React.js
 
-CSS3
+JavaScript
 
-JavaScript (Vanilla)
-
-GitHub Pages (Hosting)
+Vercel (Hosting)
 
 ---
 
