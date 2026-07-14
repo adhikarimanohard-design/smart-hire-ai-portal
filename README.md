@@ -5,7 +5,7 @@ A deployed, dynamic full-stack web application built as a placement project. SMA
 ---
 
 # 🖇 LIVE URL
-https://adhikarimanohard-design.github.io/smart-hire-ai-portal/
+https://smart-hire-ai-portal-five.vercel.app/
 
 ---
 
