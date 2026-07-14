@@ -896,7 +896,7 @@ export default function App() {
           <span className="stack-pill">⚡ Spring Boot</span>
           <span className="stack-pill">🍃 MongoDB</span>
           <span className="stack-pill">☁️ Render</span>
-          <span className="stack-pill">📄 React.js </span>
+          <span className="stack-pill">📄 React.js</span>
           <span className="stack-pill">🤖 AI Matching</span>
         </div>
         <div className="footer-credit">Personal Project by Adhikari Manohar • 2025</div>
