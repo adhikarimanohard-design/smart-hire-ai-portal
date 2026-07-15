@@ -44,7 +44,7 @@ Cloud deployment
 
 # 🌐 Live Deployment
 
-Frontend (GitHub Pages): Deployed static frontend consuming live APIs
+Frontend (Vercel): Deployed static frontend consuming live APIs
 
 Backend (Render): Spring Boot REST API server
 ✔️ Frontend and backend are fully connected and working
@@ -71,6 +71,8 @@ Spring Boot
 
 Spring Data MongoDB
 
+Render (Hosting)
+
 RESTful APIs
 
 ---
@@ -85,7 +87,7 @@ MongoDB
 
 Render (Backend deployment)
 
-GitHub Pages (Frontend deployment)
+Vercel (Frontend deployment)
 
 Maven
 
