@@ -1,3 +1,4 @@
+
 package com.smarthire.controller;
 
 import com.smarthire.model.User;
@@ -83,17 +84,6 @@ public class UserController {
             @PathVariable String id, @RequestBody User user) {
         try {
             return ResponseEntity.ok(userService.updateUser(id, user));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @PostMapping("/{id}/resume/upload")
-    public ResponseEntity<?> uploadResume(
-            @PathVariable String id,
-            @RequestParam("resume") MultipartFile file) {
-        try {
-            return ResponseEntity.ok(userService.uploadResume(id, file));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
