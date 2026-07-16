@@ -18,20 +18,36 @@ public class User {
 
     private String name;
     private String phone;
+
+    // Role: "CANDIDATE", "EMPLOYER", "ADMIN"
     private String role;
+
+    // ─── Candidate fields ─────────────────────────────────────
     private List<String> skills;
     private String experience;
     private String education;
     private String resumeUrl;
-    private Integer matchScore;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private boolean active;
-    private String password;
-    private String firstName;
-    private String lastName;
     private String resumeName;
     private boolean resumeUploaded;
+    private Integer matchScore;
+
+    // ─── Recruiter fields ─────────────────────────────────────
+    private String companyName;
+    private String companyWebsite;
+    private String companySize;
+    private String companyIndustry;
+    private String companyDescription;
+    private String companyLogoUrl;
+    private String jobTitle;
+    private String linkedinUrl;
+
+    // ─── Common fields ────────────────────────────────────────
+    private String firstName;
+    private String lastName;
+    private String password;
+    private boolean active;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public User() {
         this.createdAt = LocalDateTime.now();
@@ -40,122 +56,81 @@ public class User {
         this.resumeUploaded = false;
     }
 
-    // Getters and Setters
-    public String getId() {
-        return id;
-    }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    public String getEmail() {
-        return email;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 
-    public String getName() {
-        return name;
-    }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public List<String> getSkills() { return skills; }
+    public void setSkills(List<String> skills) { this.skills = skills; }
 
-    public String getPhone() {
-        return phone;
-    }
+    public String getExperience() { return experience; }
+    public void setExperience(String experience) { this.experience = experience; }
 
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
+    public String getEducation() { return education; }
+    public void setEducation(String education) { this.education = education; }
 
-    public String getRole() {
-        return role;
-    }
+    public String getResumeUrl() { return resumeUrl; }
+    public void setResumeUrl(String resumeUrl) { this.resumeUrl = resumeUrl; }
 
-    public void setRole(String role) {
-        this.role = role;
-    }
+    public String getResumeName() { return resumeName; }
+    public void setResumeName(String resumeName) { this.resumeName = resumeName; }
 
-    public List<String> getSkills() {
-        return skills;
-    }
+    public boolean isResumeUploaded() { return resumeUploaded; }
+    public void setResumeUploaded(boolean resumeUploaded) { this.resumeUploaded = resumeUploaded; }
 
-    public void setSkills(List<String> skills) {
-        this.skills = skills;
-    }
+    public Integer getMatchScore() { return matchScore; }
+    public void setMatchScore(Integer matchScore) { this.matchScore = matchScore; }
 
-    public String getExperience() {
-        return experience;
-    }
+    public String getCompanyName() { return companyName; }
+    public void setCompanyName(String companyName) { this.companyName = companyName; }
 
-    public void setExperience(String experience) {
-        this.experience = experience;
-    }
+    public String getCompanyWebsite() { return companyWebsite; }
+    public void setCompanyWebsite(String companyWebsite) { this.companyWebsite = companyWebsite; }
 
-    public String getEducation() {
-        return education;
-    }
+    public String getCompanySize() { return companySize; }
+    public void setCompanySize(String companySize) { this.companySize = companySize; }
 
-    public void setEducation(String education) {
-        this.education = education;
-    }
+    public String getCompanyIndustry() { return companyIndustry; }
+    public void setCompanyIndustry(String companyIndustry) { this.companyIndustry = companyIndustry; }
 
-    public String getResumeUrl() {
-        return resumeUrl;
-    }
+    public String getCompanyDescription() { return companyDescription; }
+    public void setCompanyDescription(String companyDescription) { this.companyDescription = companyDescription; }
 
-    public void setResumeUrl(String resumeUrl) {
-        this.resumeUrl = resumeUrl;
-    }
+    public String getCompanyLogoUrl() { return companyLogoUrl; }
+    public void setCompanyLogoUrl(String companyLogoUrl) { this.companyLogoUrl = companyLogoUrl; }
 
-    public Integer getMatchScore() {
-        return matchScore;
-    }
+    public String getJobTitle() { return jobTitle; }
+    public void setJobTitle(String jobTitle) { this.jobTitle = jobTitle; }
 
-    public void setMatchScore(Integer matchScore) {
-        this.matchScore = matchScore;
-    }
+    public String getLinkedinUrl() { return linkedinUrl; }
+    public void setLinkedinUrl(String linkedinUrl) { this.linkedinUrl = linkedinUrl; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 
-    public boolean isActive() {
-        return active;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-public String getPassword() { return password; }
-public void setPassword(String password) { this.password = password; }
-
-public String getFirstName() { return firstName; }
-public void setFirstName(String firstName) { this.firstName = firstName; }
-
-public String getLastName() { return lastName; }
-public void setLastName(String lastName) { this.lastName = lastName; }
-
-public String getResumeName() { return resumeName; }
-public void setResumeName(String resumeName) { this.resumeName = resumeName; }
-
-public boolean isResumeUploaded() { return resumeUploaded; }
-public void setResumeUploaded(boolean resumeUploaded) { this.resumeUploaded = resumeUploaded; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }
