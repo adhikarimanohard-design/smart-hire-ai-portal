@@ -21,7 +21,6 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    // Generate token from email
     public String generateToken(String email) {
         return Jwts.builder()
                 .setSubject(email)
@@ -31,7 +30,6 @@ public class JwtUtil {
                 .compact();
     }
 
-    // Extract email from token
     public String extractEmail(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -41,12 +39,10 @@ public class JwtUtil {
                 .getSubject();
     }
 
-    // Check if token is expired
     public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
-    // Extract expiration date
     private Date extractExpiration(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -56,7 +52,6 @@ public class JwtUtil {
                 .getExpiration();
     }
 
-    // Validate token against email
     public boolean validateToken(String token, String email) {
         try {
             return extractEmail(token).equals(email) && !isTokenExpired(token);
@@ -65,7 +60,6 @@ public class JwtUtil {
         }
     }
 
-    // Extract token from Authorization header
     public String extractTokenFromHeader(String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
