@@ -51,6 +51,11 @@ public class ApplicationService {
         return applicationRepository.save(application);
     }
 
+    public Application getApplicationById(String id) {
+        return applicationRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Application not found"));
+    }
+
     public List<Application> getUserApplications(String userId) {
         return applicationRepository.findByUserId(userId);
     }
