@@ -27,6 +27,9 @@ public class Job {
     private int applicationsCount;
     private int viewsCount;
 
+    @org.springframework.data.annotation.Transient
+    private int applicantCount;
+
     public Job() {
         this.postedDate = LocalDateTime.now();
         this.active = true;
@@ -78,4 +81,7 @@ public class Job {
 
     public int getViewsCount() { return viewsCount; }
     public void setViewsCount(int viewsCount) { this.viewsCount = viewsCount; }
+
+    public int getApplicantCount() { return applicantCount; }
+    public void setApplicantCount(int applicantCount) { this.applicantCount = applicantCount; }
 }
