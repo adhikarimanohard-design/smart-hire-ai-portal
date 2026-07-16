@@ -64,11 +64,12 @@ public class ApplicationController {
         }
     }
 
-    @PutMapping("/{id}/status")
+    @PatchMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(
             @PathVariable String id,
-            @RequestParam String status) {
+            @RequestBody java.util.Map<String, String> body) {
         try {
+            String status = body.get("status");
             return ResponseEntity.ok(
                 applicationService.updateApplicationStatus(id, status));
         } catch (Exception e) {
