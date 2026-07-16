@@ -1,3 +1,4 @@
+
 package com.smarthire.service;
 
 import com.smarthire.dto.BulkStatusRequest;
@@ -10,7 +11,11 @@ import com.smarthire.repository.JobRepository;
 import com.smarthire.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -143,5 +148,103 @@ public class ApplicationService {
         List<String> jobIds = new ArrayList<>();
         for (Job job : recruiterJobs) jobIds.add(job.getId());
         return applicationRepository.findByJobIdIn(jobIds);
+    }
+
+    /**
+     * Candidate applies to a job. The resume is attached here, at the
+     * point of application — there is no separate/central resume upload.
+     */
+    public Application applyToJob(String jobId, String userId,
+            MultipartFile resume, String coverLetter) throws Exception {
+
+        if (applicationRepository.existsByUserIdAndJobId(userId, jobId)) {
+            throw new RuntimeException("You have already applied for this job");
+        }
+
+        Job job = jobRepository.findById(jobId)
+            .orElseThrow(() -> new RuntimeException("Job not found"));
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Application application = new Application();
+        application.setJobId(jobId);
+        application.setUserId(userId);
+        String fullName = ((user.getFirstName() != null ? user.getFirstName() : "") +
+            " " + (user.getLastName() != null ? user.getLastName() : "")).trim();
+        application.setCandidateName(fullName);
+        application.setCandidateEmail(user.getEmail());
+        application.setCandidatePhone(user.getPhone());
+        application.setCoverLetter(coverLetter);
+
+        if (resume != null && !resume.isEmpty()) {
+            String uploadDir = "uploads/resumes/";
+            Files.createDirectories(Paths.get(uploadDir));
+            String fileName = userId + "_" + jobId + "_" + resume.getOriginalFilename();
+            Path filePath = Paths.get(uploadDir + fileName);
+            Files.write(filePath, resume.getBytes());
+            application.setResumeUrl(filePath.toString());
+
+            // Keep the candidate's profile in sync with their latest resume
+            user.setResumeUrl(filePath.toString());
+            user.setResumeName(resume.getOriginalFilename());
+            user.setResumeUploaded(true);
+            user.setUpdatedAt(LocalDateTime.now());
+            userRepository.save(user);
+        }
+
+        int matchScore = recommendationService.calculateMatchScore(user, job);
+        application.setMatchScore(matchScore);
+
+        Application saved = applicationRepository.save(application);
+
+        job.setApplicationsCount(job.getApplicationsCount() + 1);
+        jobRepository.save(job);
+
+        return saved;
+    }
+
+    /**
+     * Full applicant list (candidate profile + application data) for a
+     * job, used by the recruiter dashboard's "View Applicants" modal.
+     */
+    public List<CandidateProfile> getJobApplicantsProfiles(String jobId) {
+        List<Application> applications =
+            applicationRepository.findByJobIdOrderByMatchScoreDesc(jobId);
+
+        List<CandidateProfile> profiles = new ArrayList<>();
+        for (Application app : applications) {
+            CandidateProfile profile = new CandidateProfile();
+            profile.setApplicationId(app.getId());
+            profile.setJobId(app.getJobId());
+            profile.setUserId(app.getUserId());
+            profile.setStatus(app.getStatus());
+            profile.setMatchScore(app.getMatchScore());
+            profile.setCoverLetter(app.getCoverLetter());
+            profile.setRecruiterNotes(app.getRecruiterNotes());
+            profile.setAppliedAt(app.getAppliedAt());
+            profile.setUpdatedAt(app.getUpdatedAt());
+            profile.setResumeUrl(app.getResumeUrl());
+            profile.setPhone(app.getCandidatePhone());
+
+            userRepository.findById(app.getUserId()).ifPresentOrElse(user -> {
+                profile.setFirstName(user.getFirstName());
+                profile.setLastName(user.getLastName());
+                profile.setEmail(user.getEmail());
+                profile.setSkills(user.getSkills());
+                profile.setExperience(user.getExperience());
+                profile.setEducation(user.getEducation());
+                profile.setResumeName(user.getResumeName());
+                profile.setLinkedinUrl(user.getLinkedinUrl());
+            }, () -> {
+                String name = app.getCandidateName() != null ? app.getCandidateName() : "";
+                String[] parts = name.split(" ", 2);
+                profile.setFirstName(parts.length > 0 ? parts[0] : "");
+                profile.setLastName(parts.length > 1 ? parts[1] : "");
+                profile.setEmail(app.getCandidateEmail());
+            });
+
+            profiles.add(profile);
+        }
+        return profiles;
     }
 }
