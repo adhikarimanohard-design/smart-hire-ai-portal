@@ -27,7 +27,7 @@ public class Application {
     public Application() {
         this.appliedAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
-        this.status = "APPLIED";
+        this.status = "PENDING";
     }
 
     public String getId() { return id; }
