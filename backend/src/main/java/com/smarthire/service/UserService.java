@@ -108,20 +108,6 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User uploadResume(String id, MultipartFile file) throws Exception {
-        User user = getUserById(id);
-        String uploadDir = "uploads/resumes/";
-        Files.createDirectories(Paths.get(uploadDir));
-        String fileName = id + "_" + file.getOriginalFilename();
-        Path filePath = Paths.get(uploadDir + fileName);
-        Files.write(filePath, file.getBytes());
-        user.setResumeUrl(filePath.toString());
-        user.setResumeName(file.getOriginalFilename());
-        user.setResumeUploaded(true);
-        user.setUpdatedAt(LocalDateTime.now());
-        return userRepository.save(user);
-    }
-
     public User updateRecruiterProfile(String id, User userDetails) {
         User user = getUserById(id);
         user.setFirstName(userDetails.getFirstName());
