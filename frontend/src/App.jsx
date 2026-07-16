@@ -1306,7 +1306,7 @@ export default function App() {
               </div>
             )}
             {!applicantsLoading && applicants.map((a, i) => (
-              <div key={a.id || i} className="applicant-row">
+              <div key={a.applicationId || i} className="applicant-row">
                 <div>
                   <div className="applicant-name">{a.firstName} {a.lastName}</div>
                   <div className="applicant-email">{a.email}</div>
@@ -1315,6 +1315,17 @@ export default function App() {
                       <span key={j} className="skill-tag">{s}</span>
                     ))}
                   </div>
+                  {a.applicationId && (
+                    <a
+                      className="applicant-resume-link"
+                      href={`${API_BASE}/applications/${a.applicationId}/resume`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: 'inline-block', marginTop: 6, fontSize: 13, color: 'var(--accent)', textDecoration: 'underline', cursor: 'pointer' }}
+                    >
+                      📄 {a.resumeName || 'View Resume'}
+                    </a>
+                  )}
                 </div>
                 <select
                   className="applicant-status-select"
