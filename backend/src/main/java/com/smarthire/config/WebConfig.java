@@ -5,6 +5,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-    // CORS is now handled in SecurityConfig.java
-    // Keep this file empty of CORS rules to avoid the "Wildcard" crash.
+    // CORS handled in SecurityConfig.java
+    // Keep this empty to avoid Wildcard crash
 }
