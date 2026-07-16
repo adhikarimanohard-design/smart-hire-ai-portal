@@ -1,4 +1,3 @@
-
 package com.smarthire.service;
 
 import com.smarthire.dto.BulkStatusRequest;
