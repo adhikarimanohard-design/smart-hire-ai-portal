@@ -48,6 +48,10 @@ export default function App() {
   const [jobsLoading, setJobsLoading] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState('');
+
+  // landing preview toggle (for logged-out visitors)
+  const [landingView, setLandingView] = useState('candidate'); // 'candidate' | 'recruiter'
+
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = sessionStorage.getItem('sh_user');
     if (saved) {
@@ -88,6 +92,28 @@ export default function App() {
   const avatarRef = useRef(null);
 
   /* ================================
+     RECRUITER STATE
+  ================================ */
+  const [recruiterStats, setRecruiterStats] = useState(null);
+  const [recruiterJobs, setRecruiterJobs] = useState([]);
+  const [recruiterJobsLoading, setRecruiterJobsLoading] = useState(false);
+  const [recruiterError, setRecruiterError] = useState(null);
+
+  const [postJobModalOpen, setPostJobModalOpen] = useState(false);
+  const [newJob, setNewJob] = useState({
+    title: '', location: '', type: 'Full-time',
+    salaryRange: '', skills: '', description: '',
+  });
+  const [postingJob, setPostingJob] = useState(false);
+
+  const [applicantsModalOpen, setApplicantsModalOpen] = useState(false);
+  const [applicantsForJob, setApplicantsForJob] = useState(null);
+  const [applicants, setApplicants] = useState([]);
+  const [applicantsLoading, setApplicantsLoading] = useState(false);
+
+  const isRecruiter = currentUser?.role === 'recruiter';
+
+  /* ================================
      TOAST
   ================================ */
   const showToast = useCallback((msg) => {
@@ -99,7 +125,7 @@ export default function App() {
   }, []);
 
   /* ================================
-     LOAD JOBS
+     LOAD JOBS (candidate view)
   ================================ */
   const loadJobs = useCallback(async () => {
     setJobsLoading(true);
@@ -118,8 +144,39 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    loadJobs();
-  }, [loadJobs]);
+    if (!isRecruiter) loadJobs();
+  }, [loadJobs, isRecruiter]);
+
+  /* ================================
+     LOAD RECRUITER DASHBOARD DATA
+  ================================ */
+  const loadRecruiterData = useCallback(async () => {
+    if (!currentUser || currentUser.role !== 'recruiter') return;
+    setRecruiterJobsLoading(true);
+    setRecruiterError(null);
+    try {
+      const [statsRes, jobsRes] = await Promise.all([
+        fetch(`${API_BASE}/recruiter/${currentUser.id}/stats`, {
+          headers: { Authorization: `Bearer ${currentUser.token}` },
+        }),
+        fetch(`${API_BASE}/recruiter/${currentUser.id}/jobs`, {
+          headers: { Authorization: `Bearer ${currentUser.token}` },
+        }),
+      ]);
+      if (statsRes.ok) setRecruiterStats(await statsRes.json());
+      if (jobsRes.ok) setRecruiterJobs(await jobsRes.json());
+      if (!statsRes.ok && !jobsRes.ok) throw new Error('Failed to load dashboard');
+    } catch (err) {
+      console.error('Failed to load recruiter data:', err);
+      setRecruiterError(err.message);
+    } finally {
+      setRecruiterJobsLoading(false);
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (isRecruiter) loadRecruiterData();
+  }, [isRecruiter, loadRecruiterData]);
 
   /* ================================
      CLOSE USER MENU ON OUTSIDE CLICK
@@ -143,6 +200,8 @@ export default function App() {
         setModalOpen(false);
         setLoginModalOpen(false);
         setResumeModalOpen(false);
+        setPostJobModalOpen(false);
+        setApplicantsModalOpen(false);
       }
     }
     document.addEventListener('keydown', handleKey);
@@ -153,8 +212,10 @@ export default function App() {
      BODY SCROLL LOCK
   ================================ */
   useEffect(() => {
-    document.body.style.overflow = (modalOpen || loginModalOpen || resumeModalOpen) ? 'hidden' : '';
-  }, [modalOpen, loginModalOpen, resumeModalOpen]);
+    document.body.style.overflow =
+      (modalOpen || loginModalOpen || resumeModalOpen || postJobModalOpen || applicantsModalOpen)
+        ? 'hidden' : '';
+  }, [modalOpen, loginModalOpen, resumeModalOpen, postJobModalOpen, applicantsModalOpen]);
 
   /* ================================
      AUTH: LOGIN
@@ -179,6 +240,7 @@ export default function App() {
         firstName: data.firstName,
         lastName: data.lastName,
         token: data.token,
+        role: data.role || 'candidate',
         resumeUploaded: false,
       };
       sessionStorage.setItem('sh_user', JSON.stringify(user));
@@ -216,6 +278,7 @@ export default function App() {
         firstName: data.firstName,
         lastName: data.lastName,
         token: data.token,
+        role: data.role || role,
         resumeUploaded: false,
       };
       sessionStorage.setItem('sh_user', JSON.stringify(user));
@@ -235,11 +298,18 @@ export default function App() {
     setCurrentUser(null);
     sessionStorage.removeItem('sh_user');
     setUserMenuOpen(false);
+    setRecruiterStats(null);
+    setRecruiterJobs([]);
     showToast('👋 Signed out successfully');
   }
 
+  function openSignIn(prefillRole) {
+    if (prefillRole) { setAuthTab('register'); setRegRole(prefillRole); }
+    setLoginModalOpen(true);
+  }
+
   /* ================================
-     RESUME BANNER / MODAL
+     RESUME BANNER / MODAL (candidate)
   ================================ */
   function handleResumeBannerClick() {
     if (!currentUser) {
@@ -356,7 +426,7 @@ export default function App() {
   }
 
   /* ================================
-     JOB MODAL
+     JOB MODAL (candidate)
   ================================ */
   function openModal(job) {
     setCurrentJob(job);
@@ -367,7 +437,7 @@ export default function App() {
   }
 
   /* ================================
-     APPLY TO JOB
+     APPLY TO JOB (candidate)
   ================================ */
   async function applyToJob(jobId) {
     if (!currentUser) {
@@ -392,7 +462,7 @@ export default function App() {
   }
 
   /* ================================
-     SEARCH
+     SEARCH (candidate)
   ================================ */
   function performSearch(q) {
     setSearchQuery(q);
@@ -417,6 +487,98 @@ export default function App() {
     (job.skills || []).some((s) => s.toLowerCase().includes(q)) ||
     (job.description || '').toLowerCase().includes(q)
   );
+
+  /* ================================
+     RECRUITER: POST JOB
+  ================================ */
+  function openPostJobModal() {
+    setNewJob({ title: '', location: '', type: 'Full-time', salaryRange: '', skills: '', description: '' });
+    setPostJobModalOpen(true);
+  }
+
+  async function submitNewJob() {
+    if (!newJob.title.trim() || !newJob.location.trim() || !newJob.description.trim()) {
+      showToast('⚠️ Please fill in title, location, and description');
+      return;
+    }
+    setPostingJob(true);
+    try {
+      const payload = {
+        title: newJob.title.trim(),
+        location: newJob.location.trim(),
+        type: newJob.type,
+        salaryRange: newJob.salaryRange.trim(),
+        description: newJob.description.trim(),
+        skills: newJob.skills.split(',').map((s) => s.trim()).filter(Boolean),
+        company: currentUser.companyName || `${currentUser.firstName}'s Company`,
+      };
+      const res = await fetch(`${API_BASE}/jobs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentUser.token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Failed to post job');
+      showToast('✅ Job posted successfully!');
+      setPostJobModalOpen(false);
+      loadRecruiterData();
+    } catch (err) {
+      showToast('❌ Could not post job. Try again.');
+    } finally {
+      setPostingJob(false);
+    }
+  }
+
+  /* ================================
+     RECRUITER: VIEW APPLICANTS
+  ================================ */
+  async function openApplicantsModal(job) {
+    setApplicantsForJob(job);
+    setApplicantsModalOpen(true);
+    setApplicantsLoading(true);
+    setApplicants([]);
+    try {
+      const res = await fetch(`${API_BASE}/jobs/${job.id}/applicants`, {
+        headers: { Authorization: `Bearer ${currentUser.token}` },
+      });
+      if (res.ok) setApplicants(await res.json());
+    } catch (err) {
+      console.error('Failed to load applicants:', err);
+    } finally {
+      setApplicantsLoading(false);
+    }
+  }
+
+  async function updateApplicantStatus(applicationId, status) {
+    try {
+      await fetch(`${API_BASE}/applications/${applicationId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentUser.token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+      showToast(`✅ Status updated to ${status}`);
+    } catch (err) {
+      showToast('❌ Could not update status');
+    }
+  }
+
+  async function closeJobListing(jobId) {
+    try {
+      await fetch(`${API_BASE}/jobs/${jobId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${currentUser.token}` },
+      });
+      showToast('✅ Job listing closed');
+      loadRecruiterData();
+    } catch (err) {
+      showToast('❌ Could not close listing');
+    }
+  }
 
   /* ================================
      RENDER
@@ -456,9 +618,19 @@ export default function App() {
                     {currentUser.firstName ? `${currentUser.firstName} ${currentUser.lastName || ''}`.trim() : currentUser.email}
                   </div>
                   <div className="user-menu-email">{currentUser.email}</div>
+                  <div className="user-menu-email" style={{ marginTop: 4, color: isRecruiter ? 'var(--accent2)' : 'var(--accent)' }}>
+                    {isRecruiter ? '🎯 Recruiter Account' : '👤 Candidate Account'}
+                  </div>
                 </div>
-                <div className="user-menu-item" onClick={openResumeModal}>📄 My Resume</div>
-                <div className="user-menu-item">🎯 My Applications</div>
+                {!isRecruiter && (
+                  <div className="user-menu-item" onClick={openResumeModal}>📄 My Resume</div>
+                )}
+                {isRecruiter && (
+                  <div className="user-menu-item" onClick={openPostJobModal}>➕ Post a Job</div>
+                )}
+                <div className="user-menu-item">
+                  {isRecruiter ? '📋 My Job Listings' : '🎯 My Applications'}
+                </div>
                 <div className="user-menu-item">⚙️ Settings</div>
                 <div className="user-menu-item danger" onClick={logout}>🚪 Sign Out</div>
               </div>
@@ -471,214 +643,410 @@ export default function App() {
       <main>
         <div className="container">
 
-          {/* HERO */}
-          <div className="hero">
-            <div className="hero-eyebrow fade-up">✦ AI-Powered Matching Platform</div>
-            <h1 className="fade-up delay-1">
-              <span className="line1">Find Your Dream</span>
-              <span className="line2">Career Match</span>
-            </h1>
-            <p className="hero-sub fade-up delay-2">
-              85% accurate AI matching connects you with jobs that fit your skills perfectly. 10,000+ opportunities updated in real-time.
-            </p>
+          {/* ============================
+              LOGGED OUT: HERO + PREVIEW
+          ============================ */}
+          {!currentUser && (
+            <>
+              <div className="hero">
+                <div className="hero-eyebrow fade-up">✦ AI-Powered Matching Platform</div>
+                <h1 className="fade-up delay-1">
+                  <span className="line1">Find Your Dream</span>
+                  <span className="line2">Career Match</span>
+                </h1>
+                <p className="hero-sub fade-up delay-2">
+                  85% accurate AI matching connects candidates with jobs, and recruiters with talent. 10,000+ opportunities updated in real-time.
+                </p>
 
-            {/* STATS */}
-            <div className="stats-row fade-up delay-3">
-              <div className="stat-pill">
-                <span className="stat-icon">💼</span>
-                <div className="stat-info">
-                  <div className="stat-num accent">{jobsLoading ? '—' : allJobs.length}</div>
-                  <div className="stat-label">Active Jobs</div>
+                <div className="stats-row fade-up delay-3">
+                  <div className="stat-pill">
+                    <span className="stat-icon">💼</span>
+                    <div className="stat-info">
+                      <div className="stat-num accent">{jobsLoading ? '—' : allJobs.length}</div>
+                      <div className="stat-label">Active Jobs</div>
+                    </div>
+                  </div>
+                  <div className="stat-pill">
+                    <span className="stat-icon">👥</span>
+                    <div className="stat-info">
+                      <div className="stat-num pink">45,678</div>
+                      <div className="stat-label">Candidates</div>
+                    </div>
+                  </div>
+                  <div className="stat-pill">
+                    <span className="stat-icon">🎯</span>
+                    <div className="stat-info">
+                      <div className="stat-num green">85%</div>
+                      <div className="stat-label">Match Rate</div>
+                    </div>
+                  </div>
+                  <div className="stat-pill">
+                    <span className="stat-icon">✅</span>
+                    <div className="stat-info">
+                      <div className="stat-num gold">2,341</div>
+                      <div className="stat-label">Placements</div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="stat-pill">
-                <span className="stat-icon">👥</span>
-                <div className="stat-info">
-                  <div className="stat-num pink">45,678</div>
-                  <div className="stat-label">Candidates</div>
-                </div>
-              </div>
-              <div className="stat-pill">
-                <span className="stat-icon">🎯</span>
-                <div className="stat-info">
-                  <div className="stat-num green">85%</div>
-                  <div className="stat-label">Match Rate</div>
-                </div>
-              </div>
-              <div className="stat-pill">
-                <span className="stat-icon">✅</span>
-                <div className="stat-info">
-                  <div className="stat-num gold">2,341</div>
-                  <div className="stat-label">Placements</div>
-                </div>
-              </div>
-            </div>
 
-            {/* SEARCH */}
-            <div className="search-wrap fade-up delay-4">
-              <div className="search-box">
-                <div className="search-icon">🔍</div>
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Search jobs, companies, skills..."
-                  autoComplete="off"
-                  value={searchQuery}
-                  onChange={(e) => performSearch(e.target.value)}
-                  onKeyPress={(e) => { if (e.key === 'Enter') triggerSearch(); }}
-                />
-                <button className="search-btn" onClick={triggerSearch}>
-                  <span>Search</span>
+              {/* ROLE TOGGLE PREVIEW */}
+              <div className="role-toggle fade-up delay-4">
+                <button
+                  className={`role-tab ${landingView === 'candidate' ? 'active' : ''}`}
+                  onClick={() => setLandingView('candidate')}
+                >
+                  👤 I'm a Job Seeker
+                </button>
+                <button
+                  className={`role-tab ${landingView === 'recruiter' ? 'active' : ''}`}
+                  onClick={() => setLandingView('recruiter')}
+                >
+                  🎯 I'm a Recruiter
                 </button>
               </div>
-              <div className="search-tags">
-                {['Java', 'Python', 'React', 'AWS', 'Remote', 'ML'].map((tag) => (
-                  <span key={tag} className="search-tag" onClick={() => quickSearch(tag)}>{tag}</span>
-                ))}
-              </div>
-            </div>
-          </div>
 
-          {/* RESUME BANNER */}
-          <div className="resume-banner fade-up delay-5">
-            <div className="resume-banner-left">
-              <div className="resume-banner-icon">📄</div>
-              <div>
-                <div className="resume-banner-title">
-                  {currentUser
-                    ? (currentUser.resumeUploaded ? 'Resume Uploaded • AI Matching Active' : `Hi ${currentUser.firstName || 'there'}! Upload your resume`)
-                    : 'Upload Your Resume for AI Matching'}
+              <div className="preview-split fade-up delay-5">
+                <div className={`preview-col ${landingView === 'candidate' ? 'highlight' : ''}`}>
+                  <div className="preview-col-icon">👤</div>
+                  <div className="preview-col-title">For Job Seekers</div>
+                  <div className="preview-col-sub">
+                    Upload your resume and let AI match you with roles that fit your skills — no more scrolling through irrelevant listings.
+                  </div>
+                  <ul className="preview-list">
+                    <li>AI-powered job match scoring</li>
+                    <li>NLP resume parsing & skill extraction</li>
+                    <li>Real-time application tracking</li>
+                    <li>Personalized job recommendations</li>
+                  </ul>
+                  <button className="preview-cta" onClick={() => openSignIn('candidate')}>
+                    Get Matched to Jobs →
+                  </button>
                 </div>
-                <div className="resume-banner-sub">
-                  {currentUser
-                    ? (currentUser.resumeUploaded ? (currentUser.resumeName || 'Your resume is active') : 'AI will parse your skills for better job matching')
-                    : 'Let AI parse your skills and find best-fit jobs automatically'}
+
+                <div className={`preview-col ${landingView === 'recruiter' ? 'highlight' : ''}`}>
+                  <div className="preview-col-icon">🎯</div>
+                  <div className="preview-col-title">For Recruiters</div>
+                  <div className="preview-col-sub">
+                    Post openings, get AI-ranked candidates, and manage your entire pipeline from one clean dashboard.
+                  </div>
+                  <ul className="preview-list">
+                    <li>Post & manage job listings instantly</li>
+                    <li>AI-ranked applicant shortlists</li>
+                    <li>Track hires, time-to-fill & pipeline stats</li>
+                    <li>Bulk status updates for applicants</li>
+                  </ul>
+                  <button className="preview-cta recruiter-cta" onClick={() => openSignIn('recruiter')}>
+                    Start Hiring Talent →
+                  </button>
                 </div>
               </div>
-            </div>
-            <button
-              className={`resume-upload-btn ${currentUser?.resumeUploaded ? 'uploaded' : ''}`}
-              onClick={handleResumeBannerClick}
-            >
-              <span>{currentUser?.resumeUploaded ? '✅' : '📤'}</span>
-              <span>{currentUser?.resumeUploaded ? 'Update Resume' : 'Upload Resume'}</span>
-            </button>
-          </div>
 
-          {/* JOBS SECTION */}
-          <div className="section-header">
-            <div className="section-title">Open Positions</div>
-            <div className="section-count">
-              {jobsLoading ? 'Loading...' : jobsError ? 'Error' : `${filteredJobs.length} position${filteredJobs.length !== 1 ? 's' : ''}`}
-            </div>
-          </div>
+              {/* SEARCH (candidate teaser, logged out) */}
+              {landingView === 'candidate' && (
+                <div className="search-wrap fade-up">
+                  <div className="search-box">
+                    <div className="search-icon">🔍</div>
+                    <input
+                      type="text"
+                      className="search-input"
+                      placeholder="Search jobs, companies, skills..."
+                      autoComplete="off"
+                      value={searchQuery}
+                      onChange={(e) => performSearch(e.target.value)}
+                      onKeyPress={(e) => { if (e.key === 'Enter') triggerSearch(); }}
+                    />
+                    <button className="search-btn" onClick={triggerSearch}>
+                      <span>Search</span>
+                    </button>
+                  </div>
+                  <div className="search-tags">
+                    {['Java', 'Python', 'React', 'AWS', 'Remote', 'ML'].map((tag) => (
+                      <span key={tag} className="search-tag" onClick={() => quickSearch(tag)}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
-          <div className="jobs-grid">
-            {jobsLoading && (
-              <div className="loading-state">
-                <div className="loading-spinner"></div>
-                <div className="loading-text">Fetching jobs from database...</div>
+          {/* ============================
+              LOGGED IN — CANDIDATE VIEW
+          ============================ */}
+          {currentUser && !isRecruiter && (
+            <>
+              <div className="hero" style={{ paddingTop: 'clamp(24px, 4vw, 40px)' }}>
+                <div className="hero-eyebrow fade-up">✦ Welcome back, {currentUser.firstName}</div>
+                <h1 className="fade-up delay-1">
+                  <span className="line1">Find Your Dream</span>
+                  <span className="line2">Career Match</span>
+                </h1>
+                <p className="hero-sub fade-up delay-2">
+                  85% accurate AI matching connects you with jobs that fit your skills perfectly.
+                </p>
+                <div className="search-wrap fade-up delay-4">
+                  <div className="search-box">
+                    <div className="search-icon">🔍</div>
+                    <input
+                      type="text"
+                      className="search-input"
+                      placeholder="Search jobs, companies, skills..."
+                      autoComplete="off"
+                      value={searchQuery}
+                      onChange={(e) => performSearch(e.target.value)}
+                      onKeyPress={(e) => { if (e.key === 'Enter') triggerSearch(); }}
+                    />
+                    <button className="search-btn" onClick={triggerSearch}>
+                      <span>Search</span>
+                    </button>
+                  </div>
+                  <div className="search-tags">
+                    {['Java', 'Python', 'React', 'AWS', 'Remote', 'ML'].map((tag) => (
+                      <span key={tag} className="search-tag" onClick={() => quickSearch(tag)}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
               </div>
-            )}
 
-            {!jobsLoading && jobsError && (
-              <div className="error-state">
-                <h3>⚠️ Could not load jobs</h3>
-                <p>Backend may be waking up. Please refresh in 30 seconds.</p>
-                <p style={{ marginTop: 8, fontSize: 12, color: 'var(--text-dim)' }}>{jobsError}</p>
+              <div className="resume-banner fade-up delay-5">
+                <div className="resume-banner-left">
+                  <div className="resume-banner-icon">📄</div>
+                  <div>
+                    <div className="resume-banner-title">
+                      {currentUser.resumeUploaded ? 'Resume Uploaded • AI Matching Active' : `Hi ${currentUser.firstName || 'there'}! Upload your resume`}
+                    </div>
+                    <div className="resume-banner-sub">
+                      {currentUser.resumeUploaded ? (currentUser.resumeName || 'Your resume is active') : 'AI will parse your skills for better job matching'}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  className={`resume-upload-btn ${currentUser?.resumeUploaded ? 'uploaded' : ''}`}
+                  onClick={handleResumeBannerClick}
+                >
+                  <span>{currentUser?.resumeUploaded ? '✅' : '📤'}</span>
+                  <span>{currentUser?.resumeUploaded ? 'Update Resume' : 'Upload Resume'}</span>
+                </button>
               </div>
-            )}
 
-            {!jobsLoading && !jobsError && filteredJobs.length === 0 && (
-              <div className="no-results">
-                <div className="no-results-emoji">🔭</div>
-                <h3>No positions found</h3>
-                <p>Try different keywords or browse all jobs</p>
+              <div className="section-header">
+                <div className="section-title">Open Positions</div>
+                <div className="section-count">
+                  {jobsLoading ? 'Loading...' : jobsError ? 'Error' : `${filteredJobs.length} position${filteredJobs.length !== 1 ? 's' : ''}`}
+                </div>
               </div>
-            )}
 
-            {!jobsLoading && !jobsError && filteredJobs.length > 0 && (
-              <>
-                {filteredJobs.map((job) => {
-                  const { matchClass, matchLabel } = getMatchInfo(job);
-                  const emoji = getCompanyEmoji(job.company);
-                  const daysAgo = getDaysAgo(job.postedDate);
-                  const skills = (job.skills || []).slice(0, 5);
-                  const salary = job.salaryRange || 'Competitive';
-                  return (
-                    <div key={job.id} className="job-card" onClick={() => openModal(job)}>
-                      <div className="job-card-top">
-                        <div className="job-company-row">
-                          <div className="company-logo">{emoji}</div>
-                          <div className="job-meta-info">
-                            <div className="job-title">{job.title}</div>
-                            <div className="job-company">{job.company}</div>
+              <div className="jobs-grid">
+                {jobsLoading && (
+                  <div className="loading-state">
+                    <div className="loading-spinner"></div>
+                    <div className="loading-text">Fetching jobs from database...</div>
+                  </div>
+                )}
+
+                {!jobsLoading && jobsError && (
+                  <div className="error-state">
+                    <h3>⚠️ Could not load jobs</h3>
+                    <p>Backend may be waking up. Please refresh in 30 seconds.</p>
+                    <p style={{ marginTop: 8, fontSize: 12, color: 'var(--text-dim)' }}>{jobsError}</p>
+                  </div>
+                )}
+
+                {!jobsLoading && !jobsError && filteredJobs.length === 0 && (
+                  <div className="no-results">
+                    <div className="no-results-emoji">🔭</div>
+                    <h3>No positions found</h3>
+                    <p>Try different keywords or browse all jobs</p>
+                  </div>
+                )}
+
+                {!jobsLoading && !jobsError && filteredJobs.length > 0 && (
+                  <>
+                    {filteredJobs.map((job) => {
+                      const { matchClass, matchLabel } = getMatchInfo(job);
+                      const emoji = getCompanyEmoji(job.company);
+                      const daysAgo = getDaysAgo(job.postedDate);
+                      const skills = (job.skills || []).slice(0, 5);
+                      const salary = job.salaryRange || 'Competitive';
+                      return (
+                        <div key={job.id} className="job-card" onClick={() => openModal(job)}>
+                          <div className="job-card-top">
+                            <div className="job-company-row">
+                              <div className="company-logo">{emoji}</div>
+                              <div className="job-meta-info">
+                                <div className="job-title">{job.title}</div>
+                                <div className="job-company">{job.company}</div>
+                              </div>
+                            </div>
+                            <div className={`match-badge ${matchClass}`}>{matchLabel}</div>
+                          </div>
+                          <div className="job-location-row">
+                            <span className="job-loc">📍 {job.location}</span>
+                            <span className="job-type">💼 {job.type || 'Full-time'}</span>
+                            <span className="job-time">🕒 {daysAgo}</span>
+                          </div>
+                          <div className="skills-row">
+                            {skills.map((s, i) => <span key={i} className="skill-tag">{s}</span>)}
+                          </div>
+                          <p className="job-desc">{job.description}</p>
+                          <div className="job-card-bottom">
+                            <div className="job-salary"><span>{salary}</span></div>
+                            <button
+                              className="apply-btn"
+                              onClick={(e) => { e.stopPropagation(); applyToJob(job.id); }}
+                            >
+                              Apply Now →
+                            </button>
                           </div>
                         </div>
-                        <div className={`match-badge ${matchClass}`}>{matchLabel}</div>
+                      );
+                    })}
+
+                    <div className="features-card">
+                      <div className="features-title">✦ Platform Capabilities</div>
+                      <div className="feature-item">
+                        <div className="feat-icon">🤖</div>
+                        <div>
+                          <div className="feat-title">85% ML Matching Accuracy</div>
+                          <div className="feat-sub">AI-powered job recommendations tailored to your profile</div>
+                        </div>
                       </div>
-                      <div className="job-location-row">
-                        <span className="job-loc">📍 {job.location}</span>
-                        <span className="job-type">💼 {job.type || 'Full-time'}</span>
-                        <span className="job-time">🕒 {daysAgo}</span>
+                      <div className="feature-item">
+                        <div className="feat-icon">📄</div>
+                        <div>
+                          <div className="feat-title">NLP Resume Parsing</div>
+                          <div className="feat-sub">Automatic skill extraction from your resume</div>
+                        </div>
                       </div>
-                      <div className="skills-row">
-                        {skills.map((s, i) => <span key={i} className="skill-tag">{s}</span>)}
+                      <div className="feature-item">
+                        <div className="feat-icon">⚡</div>
+                        <div>
+                          <div className="feat-title">Real-Time Job Updates</div>
+                          <div className="feat-sub">40% faster job search with live notifications</div>
+                        </div>
                       </div>
-                      <p className="job-desc">{job.description}</p>
-                      <div className="job-card-bottom">
-                        <div className="job-salary"><span>{salary}</span></div>
-                        <button
-                          className="apply-btn"
-                          onClick={(e) => { e.stopPropagation(); applyToJob(job.id); }}
-                        >
-                          Apply Now →
+                      <div className="feature-item">
+                        <div className="feat-icon">☁️</div>
+                        <div>
+                          <div className="feat-title">Cloud-Native Architecture</div>
+                          <div className="feat-sub">Scalable Spring Boot backend on Render</div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ============================
+              LOGGED IN — RECRUITER VIEW
+          ============================ */}
+          {currentUser && isRecruiter && (
+            <div style={{ paddingTop: 'clamp(24px, 4vw, 40px)' }}>
+              <div className="dash-header fade-up">
+                <div>
+                  <div className="dash-welcome">Welcome, <span>{currentUser.firstName}</span> 🎯</div>
+                  <div className="dash-sub">Manage your job listings and review AI-ranked candidates</div>
+                </div>
+                <button className="post-job-btn" onClick={openPostJobModal}>
+                  <span>➕</span><span>Post a Job</span>
+                </button>
+              </div>
+
+              <div className="dash-stats-grid fade-up delay-1">
+                <div className="dash-stat-card">
+                  <div className="dash-stat-icon">📋</div>
+                  <div className="dash-stat-num" style={{ color: 'var(--accent)' }}>
+                    {recruiterStats?.activeJobs ?? recruiterJobs.length ?? '—'}
+                  </div>
+                  <div className="dash-stat-label">Active Listings</div>
+                </div>
+                <div className="dash-stat-card">
+                  <div className="dash-stat-icon">👥</div>
+                  <div className="dash-stat-num" style={{ color: 'var(--accent2)' }}>
+                    {recruiterStats?.totalApplicants ?? '—'}
+                  </div>
+                  <div className="dash-stat-label">Total Applicants</div>
+                </div>
+                <div className="dash-stat-card">
+                  <div className="dash-stat-icon">✅</div>
+                  <div className="dash-stat-num" style={{ color: 'var(--accent3)' }}>
+                    {recruiterStats?.totalHires ?? '—'}
+                  </div>
+                  <div className="dash-stat-label">Hires Made</div>
+                </div>
+                <div className="dash-stat-card">
+                  <div className="dash-stat-icon">⏱️</div>
+                  <div className="dash-stat-num" style={{ color: 'var(--gold)' }}>
+                    {recruiterStats?.avgTimeToHire ? `${recruiterStats.avgTimeToHire}d` : '—'}
+                  </div>
+                  <div className="dash-stat-label">Avg. Time to Hire</div>
+                </div>
+              </div>
+
+              <div className="section-header fade-up delay-2">
+                <div className="section-title">Your Job Listings</div>
+                <div className="section-count">
+                  {recruiterJobsLoading ? 'Loading...' : `${recruiterJobs.length} listing${recruiterJobs.length !== 1 ? 's' : ''}`}
+                </div>
+              </div>
+
+              {recruiterJobsLoading && (
+                <div className="loading-state" style={{ padding: '60px 20px' }}>
+                  <div className="loading-spinner"></div>
+                  <div className="loading-text">Loading your dashboard...</div>
+                </div>
+              )}
+
+              {!recruiterJobsLoading && recruiterError && (
+                <div className="error-state">
+                  <h3>⚠️ Could not load dashboard</h3>
+                  <p>Backend may be waking up. Please refresh in 30 seconds.</p>
+                </div>
+              )}
+
+              {!recruiterJobsLoading && !recruiterError && recruiterJobs.length === 0 && (
+                <div className="dash-empty">
+                  <div className="no-results-emoji">📋</div>
+                  <h3>No job listings yet</h3>
+                  <p>Post your first job to start receiving AI-matched applicants.</p>
+                </div>
+              )}
+
+              {!recruiterJobsLoading && !recruiterError && recruiterJobs.length > 0 && (
+                <div className="recruiter-jobs-list fade-up delay-3">
+                  {recruiterJobs.map((job) => (
+                    <div key={job.id} className="recruiter-job-card">
+                      <div className="recruiter-job-info">
+                        <div className="company-logo">{getCompanyEmoji(job.company || currentUser.firstName)}</div>
+                        <div>
+                          <div className="recruiter-job-title">{job.title}</div>
+                          <div className="recruiter-job-meta">📍 {job.location} • 🕒 {getDaysAgo(job.postedDate)}</div>
+                        </div>
+                      </div>
+                      <div className="recruiter-job-actions">
+                        <span className="applicant-count-badge">
+                          {job.applicantCount ?? 0} applicant{(job.applicantCount ?? 0) !== 1 ? 's' : ''}
+                        </span>
+                        <button className="view-applicants-btn" onClick={() => openApplicantsModal(job)}>
+                          View Applicants
+                        </button>
+                        <button className="close-job-btn" onClick={() => closeJobListing(job.id)}>
+                          Close Listing
                         </button>
                       </div>
                     </div>
-                  );
-                })}
-
-                {/* FEATURES CARD */}
-                <div className="features-card">
-                  <div className="features-title">✦ Platform Capabilities</div>
-                  <div className="feature-item">
-                    <div className="feat-icon">🤖</div>
-                    <div>
-                      <div className="feat-title">85% ML Matching Accuracy</div>
-                      <div className="feat-sub">AI-powered job recommendations tailored to your profile</div>
-                    </div>
-                  </div>
-                  <div className="feature-item">
-                    <div className="feat-icon">📄</div>
-                    <div>
-                      <div className="feat-title">NLP Resume Parsing</div>
-                      <div className="feat-sub">Automatic skill extraction from your resume</div>
-                    </div>
-                  </div>
-                  <div className="feature-item">
-                    <div className="feat-icon">⚡</div>
-                    <div>
-                      <div className="feat-title">Real-Time Job Updates</div>
-                      <div className="feat-sub">40% faster job search with live notifications</div>
-                    </div>
-                  </div>
-                  <div className="feature-item">
-                    <div className="feat-icon">☁️</div>
-                    <div>
-                      <div className="feat-title">Cloud-Native Architecture</div>
-                      <div className="feat-sub">Scalable Spring Boot backend on Render</div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              </>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
         </div>
       </main>
 
-      {/* JOB DETAIL MODAL */}
+      {/* JOB DETAIL MODAL (candidate) */}
       <div className={`modal-overlay ${modalOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) closeModalBtn(); }}>
         <div className="modal">
           {currentJob && (() => {
@@ -726,21 +1094,20 @@ export default function App() {
         </div>
       </div>
 
-      {/* LOGIN MODAL */}
+      {/* LOGIN / REGISTER MODAL */}
       <div className={`modal-overlay ${loginModalOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setLoginModalOpen(false); }}>
         <div className="modal" style={{ maxWidth: 460 }}>
           <div className="login-modal-header">
             <button className="login-modal-close" onClick={() => setLoginModalOpen(false)}>✕</button>
             <div className="login-logo-icon">💼</div>
             <div className="login-modal-title">Welcome to SmartHire</div>
-            <div className="login-modal-sub">Sign in to apply and get AI-matched to jobs</div>
+            <div className="login-modal-sub">Sign in to apply, hire, and get AI-matched</div>
           </div>
           <div className="auth-tabs">
             <button className={`auth-tab ${authTab === 'login' ? 'active' : ''}`} onClick={() => setAuthTab('login')}>Sign In</button>
             <button className={`auth-tab ${authTab === 'register' ? 'active' : ''}`} onClick={() => setAuthTab('register')}>Create Account</button>
           </div>
 
-          {/* LOGIN PANEL */}
           <div className={`form-panel ${authTab === 'login' ? 'active' : ''}`}>
             <div className="auth-form">
               <div className="form-group">
@@ -765,7 +1132,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* REGISTER PANEL */}
           <div className={`form-panel ${authTab === 'register' ? 'active' : ''}`}>
             <div className="auth-form">
               <div className="form-row">
@@ -809,7 +1175,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* RESUME UPLOAD MODAL */}
+      {/* RESUME UPLOAD MODAL (candidate) */}
       <div className={`modal-overlay ${resumeModalOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) closeResumeModal(); }}>
         <div className="modal" style={{ maxWidth: 520 }}>
           <div className="modal-header">
@@ -885,6 +1251,118 @@ export default function App() {
         </div>
       </div>
 
+      {/* POST JOB MODAL (recruiter) */}
+      <div className={`modal-overlay ${postJobModalOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setPostJobModalOpen(false); }}>
+        <div className="modal" style={{ maxWidth: 560 }}>
+          <div className="modal-header">
+            <div>
+              <div className="modal-title">➕ Post a New Job</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>Reach AI-matched candidates instantly</div>
+            </div>
+            <button className="modal-close" onClick={() => setPostJobModalOpen(false)}>✕</button>
+          </div>
+          <div className="modal-body">
+            <div className="form-group">
+              <label className="form-label">Job Title</label>
+              <input type="text" className="form-input" placeholder="e.g. Senior Backend Engineer"
+                value={newJob.title} onChange={(e) => setNewJob({ ...newJob, title: e.target.value })} />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Location</label>
+                <input type="text" className="form-input" placeholder="e.g. Remote / Bangalore"
+                  value={newJob.location} onChange={(e) => setNewJob({ ...newJob, location: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Job Type</label>
+                <select className="form-input" style={{ cursor: 'pointer' }}
+                  value={newJob.type} onChange={(e) => setNewJob({ ...newJob, type: e.target.value })}>
+                  <option>Full-time</option>
+                  <option>Part-time</option>
+                  <option>Contract</option>
+                  <option>Internship</option>
+                </select>
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Salary Range</label>
+              <input type="text" className="form-input" placeholder="e.g. ₹12L - ₹18L"
+                value={newJob.salaryRange} onChange={(e) => setNewJob({ ...newJob, salaryRange: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Required Skills (comma-separated)</label>
+              <input type="text" className="form-input" placeholder="e.g. Java, Spring Boot, AWS"
+                value={newJob.skills} onChange={(e) => setNewJob({ ...newJob, skills: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Description</label>
+              <textarea className="form-input" rows={4} placeholder="Describe the role, responsibilities, and expectations..."
+                value={newJob.description} onChange={(e) => setNewJob({ ...newJob, description: e.target.value })} />
+            </div>
+          </div>
+          <div className="resume-modal-footer">
+            <button className="resume-cancel-btn" onClick={() => setPostJobModalOpen(false)}>Cancel</button>
+            <button className="resume-submit-btn" disabled={postingJob} onClick={submitNewJob}>
+              {postingJob ? 'Posting...' : 'Post Job →'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* APPLICANTS MODAL (recruiter) */}
+      <div className={`modal-overlay ${applicantsModalOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setApplicantsModalOpen(false); }}>
+        <div className="modal" style={{ maxWidth: 620 }}>
+          <div className="modal-header">
+            <div>
+              <div className="modal-title">👥 Applicants</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>
+                {applicantsForJob?.title}
+              </div>
+            </div>
+            <button className="modal-close" onClick={() => setApplicantsModalOpen(false)}>✕</button>
+          </div>
+          <div className="modal-body">
+            {applicantsLoading && (
+              <div className="loading-state" style={{ padding: '40px 0' }}>
+                <div className="loading-spinner"></div>
+                <div className="loading-text">Loading applicants...</div>
+              </div>
+            )}
+            {!applicantsLoading && applicants.length === 0 && (
+              <div className="dash-empty">
+                <div className="no-results-emoji">🔭</div>
+                <h3>No applicants yet</h3>
+                <p>Check back soon as candidates apply.</p>
+              </div>
+            )}
+            {!applicantsLoading && applicants.map((a, i) => (
+              <div key={a.id || i} className="applicant-row">
+                <div>
+                  <div className="applicant-name">{a.firstName} {a.lastName}</div>
+                  <div className="applicant-email">{a.email}</div>
+                  <div className="applicant-skills">
+                    {(a.skills || []).slice(0, 6).map((s, j) => (
+                      <span key={j} className="skill-tag">{s}</span>
+                    ))}
+                  </div>
+                </div>
+                <select
+                  className="applicant-status-select"
+                  defaultValue={a.status || 'PENDING'}
+                  onChange={(e) => updateApplicantStatus(a.applicationId || a.id, e.target.value)}
+                >
+                  <option value="PENDING">Pending</option>
+                  <option value="SHORTLISTED">Shortlisted</option>
+                  <option value="INTERVIEWING">Interviewing</option>
+                  <option value="REJECTED">Rejected</option>
+                  <option value="HIRED">Hired</option>
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* TOAST */}
       <div className={`toast ${toast.show ? 'show' : ''}`}>{toast.msg}</div>
 
@@ -896,8 +1374,7 @@ export default function App() {
           <span className="stack-pill">⚡ Spring Boot</span>
           <span className="stack-pill">🍃 MongoDB</span>
           <span className="stack-pill">☁️ Render</span>
-          <span className="stack-pill">🗒
-React.js</span>
+          <span className="stack-pill">⚛️ React.js</span>
           <span className="stack-pill">🤖 AI Matching</span>
         </div>
         <div className="footer-credit">Personal Project by Adhikari Manohar Dash • 2025</div>
