@@ -75,6 +75,7 @@ export default function App() {
   const [regRole, setRegRole] = useState('candidate');
 
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
+  const [applyTargetJob, setApplyTargetJob] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploadingProgress, setUploadingProgress] = useState(0);
@@ -309,19 +310,23 @@ export default function App() {
   }
 
   /* ================================
-     RESUME BANNER / MODAL (candidate)
+     APPLY MODAL (candidate) — resume is
+     attached at the point of applying,
+     there is no standalone/central resume.
   ================================ */
-  function handleResumeBannerClick() {
+  function openApplyModal(job) {
     if (!currentUser) {
+      setModalOpen(false);
       setLoginModalOpen(true);
-      showToast('🔒 Sign in first to upload your resume');
+      showToast('🔒 Sign in to apply for jobs');
       return;
     }
-    openResumeModal();
-  }
-
-  function openResumeModal() {
-    if (!currentUser) { setLoginModalOpen(true); return; }
+    if (isRecruiter) {
+      showToast('⚠️ Recruiter accounts cannot apply to jobs');
+      return;
+    }
+    setApplyTargetJob(job);
+    setModalOpen(false);
     setUserMenuOpen(false);
     setResumeModalOpen(true);
   }
@@ -340,6 +345,7 @@ export default function App() {
 
   function closeResumeModal() {
     setResumeModalOpen(false);
+    setApplyTargetJob(null);
     resetResumeModal();
   }
 
@@ -371,11 +377,11 @@ export default function App() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
-  async function uploadResume() {
-    if (!selectedFile) return;
+  async function submitApplication() {
+    if (!selectedFile || !applyTargetJob || !currentUser) return;
     setResumeSubmitting(true);
     setShowUploadProgress(true);
-    setProgressLabel('Uploading...');
+    setProgressLabel('Uploading resume...');
 
     let pct = 0;
     progressIntervalRef.current = setInterval(() => {
@@ -387,15 +393,22 @@ export default function App() {
     try {
       const formData = new FormData();
       formData.append('resume', selectedFile);
-      const uploadRes = await fetch(`${API_BASE}/users/${currentUser.id}/resume/upload`, {
+      formData.append('userId', currentUser.id);
+
+      const applyRes = await fetch(`${API_BASE}/jobs/${applyTargetJob.id}/apply`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${currentUser.token}` },
         body: formData,
       });
-      if (!uploadRes.ok) throw new Error('Upload failed');
 
       clearInterval(progressIntervalRef.current);
       setUploadingProgress(100);
+
+      if (!applyRes.ok) {
+        const errText = await applyRes.text().catch(() => '');
+        throw new Error(errText || 'Could not submit application');
+      }
+
       setProgressLabel('🤖 Analyzing skills...');
 
       const pool = ['JavaScript', 'React', 'Python', 'Java', 'Node.js', 'AWS', 'SQL', 'Docker', 'TypeScript', 'MongoDB', 'Spring Boot', 'REST API'];
@@ -410,18 +423,19 @@ export default function App() {
         const updatedUser = { ...currentUser, resumeUploaded: true, resumeName: selectedFile.name };
         setCurrentUser(updatedUser);
         sessionStorage.setItem('sh_user', JSON.stringify(updatedUser));
-        showToast('✅ Resume uploaded & analyzed!');
+        showToast(`✅ Applied successfully for ${applyTargetJob.title}!`);
 
         setTimeout(() => {
           setResumeModalOpen(false);
+          setApplyTargetJob(null);
           resetResumeModal();
         }, 1800);
       }, 400);
     } catch (err) {
       clearInterval(progressIntervalRef.current);
       setShowUploadProgress(false);
-      showToast('❌ Upload failed. Please try again.');
       setResumeSubmitting(false);
+      showToast(`❌ ${err.message || 'Could not submit application. Try again.'}`);
     }
   }
 
@@ -433,31 +447,6 @@ export default function App() {
     setModalOpen(true);
   }
   function closeModalBtn() {
-    setModalOpen(false);
-  }
-
-  /* ================================
-     APPLY TO JOB (candidate)
-  ================================ */
-  async function applyToJob(jobId) {
-    if (!currentUser) {
-      setModalOpen(false);
-      setLoginModalOpen(true);
-      showToast('🔒 Sign in to apply for jobs');
-      return;
-    }
-
-    const job = allJobs.find((j) => j.id === jobId);
-    const title = job ? job.title : 'this position';
-
-    try {
-      await fetch(`${API_BASE}/jobs/${jobId}/apply`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-    } catch (err) { /* ignore */ }
-
-    showToast(`✅ Applied successfully for ${title}!`);
     setModalOpen(false);
   }
 
@@ -511,6 +500,7 @@ export default function App() {
         description: newJob.description.trim(),
         skills: newJob.skills.split(',').map((s) => s.trim()).filter(Boolean),
         company: currentUser.companyName || `${currentUser.firstName}'s Company`,
+        postedBy: currentUser.id,
       };
       const res = await fetch(`${API_BASE}/jobs`, {
         method: 'POST',
@@ -553,7 +543,7 @@ export default function App() {
 
   async function updateApplicantStatus(applicationId, status) {
     try {
-      await fetch(`${API_BASE}/applications/${applicationId}/status`, {
+      const res = await fetch(`${API_BASE}/applications/${applicationId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -561,7 +551,9 @@ export default function App() {
         },
         body: JSON.stringify({ status }),
       });
+      if (!res.ok) throw new Error('Update failed');
       showToast(`✅ Status updated to ${status}`);
+      loadRecruiterData();
     } catch (err) {
       showToast('❌ Could not update status');
     }
@@ -622,9 +614,6 @@ export default function App() {
                     {isRecruiter ? '🎯 Recruiter Account' : '👤 Candidate Account'}
                   </div>
                 </div>
-                {!isRecruiter && (
-                  <div className="user-menu-item" onClick={openResumeModal}>📄 My Resume</div>
-                )}
                 {isRecruiter && (
                   <div className="user-menu-item" onClick={openPostJobModal}>➕ Post a Job</div>
                 )}
@@ -808,27 +797,6 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="resume-banner fade-up delay-5">
-                <div className="resume-banner-left">
-                  <div className="resume-banner-icon">📄</div>
-                  <div>
-                    <div className="resume-banner-title">
-                      {currentUser.resumeUploaded ? 'Resume Uploaded • AI Matching Active' : `Hi ${currentUser.firstName || 'there'}! Upload your resume`}
-                    </div>
-                    <div className="resume-banner-sub">
-                      {currentUser.resumeUploaded ? (currentUser.resumeName || 'Your resume is active') : 'AI will parse your skills for better job matching'}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  className={`resume-upload-btn ${currentUser?.resumeUploaded ? 'uploaded' : ''}`}
-                  onClick={handleResumeBannerClick}
-                >
-                  <span>{currentUser?.resumeUploaded ? '✅' : '📤'}</span>
-                  <span>{currentUser?.resumeUploaded ? 'Update Resume' : 'Upload Resume'}</span>
-                </button>
-              </div>
-
               <div className="section-header">
                 <div className="section-title">Open Positions</div>
                 <div className="section-count">
@@ -893,7 +861,7 @@ export default function App() {
                             <div className="job-salary"><span>{salary}</span></div>
                             <button
                               className="apply-btn"
-                              onClick={(e) => { e.stopPropagation(); applyToJob(job.id); }}
+                              onClick={(e) => { e.stopPropagation(); openApplyModal(job); }}
                             >
                               Apply Now →
                             </button>
@@ -1086,7 +1054,7 @@ export default function App() {
                 </div>
                 <div className="modal-footer">
                   <div className="modal-salary"><span>{currentJob.salaryRange || 'Competitive'}</span></div>
-                  <button className="modal-apply-btn" onClick={() => applyToJob(currentJob.id)}>Apply Now →</button>
+                  <button className="modal-apply-btn" onClick={() => openApplyModal(currentJob)}>Apply Now →</button>
                 </div>
               </>
             );
@@ -1175,13 +1143,15 @@ export default function App() {
         </div>
       </div>
 
-      {/* RESUME UPLOAD MODAL (candidate) */}
+      {/* APPLY MODAL — resume attached at point of application (candidate) */}
       <div className={`modal-overlay ${resumeModalOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) closeResumeModal(); }}>
         <div className="modal" style={{ maxWidth: 520 }}>
           <div className="modal-header">
             <div>
-              <div className="modal-title">📄 Resume Manager</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>Upload for AI-powered skill matching</div>
+              <div className="modal-title">📄 Apply {applyTargetJob ? `for ${applyTargetJob.title}` : ''}</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>
+                {applyTargetJob?.company ? `${applyTargetJob.company} • ` : ''}Attach your resume to submit your application
+              </div>
             </div>
             <button className="modal-close" onClick={closeResumeModal}>✕</button>
           </div>
@@ -1243,9 +1213,9 @@ export default function App() {
               className="resume-submit-btn"
               disabled={!selectedFile || resumeSubmitting}
               style={resumeSubmitDone ? { background: 'linear-gradient(135deg,#4ade80,#16a34a)' } : undefined}
-              onClick={uploadResume}
+              onClick={submitApplication}
             >
-              {resumeSubmitDone ? '✅ Resume Uploaded!' : resumeSubmitting ? 'Uploading...' : 'Upload & Analyze'}
+              {resumeSubmitDone ? '✅ Application Submitted!' : resumeSubmitting ? 'Submitting...' : 'Submit Application'}
             </button>
           </div>
         </div>
