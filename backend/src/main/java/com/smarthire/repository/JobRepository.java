@@ -8,7 +8,13 @@ import java.util.List;
 
 @Repository
 public interface JobRepository extends MongoRepository<Job, String> {
+
     List<Job> findByActiveTrue();
-    List<Job> findByTitleContainingIgnoreCaseOrCompanyContainingIgnoreCase(String title, String company);
+    List<Job> findByTitleContainingIgnoreCaseOrCompanyContainingIgnoreCase(
+            String title, String company);
     List<Job> findByPostedBy(String userId);
+    List<Job> findByPostedByAndActiveTrue(String userId);
+    List<Job> findByPostedByOrderByPostedDateDesc(String userId);
+    long countByPostedByAndActiveTrue(String userId);
+    long countByPostedBy(String userId);
 }
