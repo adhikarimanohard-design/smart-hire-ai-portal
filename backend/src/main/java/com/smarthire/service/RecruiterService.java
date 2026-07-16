@@ -9,9 +9,11 @@ import com.smarthire.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class RecruiterService {
@@ -20,12 +22,25 @@ public class RecruiterService {
     @Autowired private ApplicationRepository applicationRepository;
     @Autowired private InterviewRepository interviewRepository;
 
+    /**
+     * Jobs posted by this recruiter, enriched with a live applicant count
+     * so the recruiter dashboard can show "N applicants" per listing.
+     */
+    public List<Job> getJobsByRecruiter(String recruiterId) {
+        List<Job> jobs = jobRepository.findByPostedByOrderByPostedDateDesc(recruiterId);
+        for (Job job : jobs) {
+            long count = applicationRepository.countByJobId(job.getId());
+            job.setApplicantCount((int) count);
+        }
+        return jobs;
+    }
+
     public RecruiterStats getDashboardStats(String recruiterId) {
         RecruiterStats stats = new RecruiterStats();
 
-        stats.setActiveJobsCount(
+        stats.setActiveJobs(
             (int) jobRepository.countByPostedByAndActiveTrue(recruiterId));
-        stats.setTotalJobsCount(
+        stats.setTotalJobs(
             (int) jobRepository.countByPostedBy(recruiterId));
 
         List<Job> recruiterJobs = jobRepository.findByPostedBy(recruiterId);
@@ -51,13 +66,16 @@ public class RecruiterService {
                 .count();
             stats.setShortlistedCount((int) shortlisted);
 
-            LocalDateTime startOfMonth = LocalDateTime.now()
-                .withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
-            long filled = allApplications.stream()
-                .filter(a -> "ACCEPTED".equals(a.getStatus()))
-                .filter(a -> a.getUpdatedAt().isAfter(startOfMonth))
-                .count();
-            stats.setPositionsFilledThisMonth((int) filled);
+            List<Application> hired = allApplications.stream()
+                .filter(a -> "HIRED".equals(a.getStatus()))
+                .collect(Collectors.toList());
+            stats.setTotalHires(hired.size());
+
+            double avgDays = hired.stream()
+                .filter(a -> a.getAppliedAt() != null && a.getUpdatedAt() != null)
+                .mapToLong(a -> Duration.between(a.getAppliedAt(), a.getUpdatedAt()).toDays())
+                .average().orElse(0.0);
+            stats.setAvgTimeToHire(Math.round(avgDays * 10.0) / 10.0);
 
             double avgScore = allApplications.stream()
                 .filter(a -> a.getMatchScore() != null)
