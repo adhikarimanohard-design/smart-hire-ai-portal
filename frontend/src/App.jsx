@@ -242,6 +242,8 @@ export default function App() {
         lastName: data.lastName,
         token: data.token,
         role: data.role || 'candidate',
+        companyName: data.companyName || '',
+        companyLogoUrl: data.companyLogoUrl || '',
         resumeUploaded: false,
       };
       sessionStorage.setItem('sh_user', JSON.stringify(user));
@@ -280,6 +282,8 @@ export default function App() {
         lastName: data.lastName,
         token: data.token,
         role: data.role || role,
+        companyName: data.companyName || '',
+        companyLogoUrl: data.companyLogoUrl || '',
         resumeUploaded: false,
       };
       sessionStorage.setItem('sh_user', JSON.stringify(user));
