@@ -5,16 +5,13 @@ import com.smarthire.dto.CandidateProfile;
 import com.smarthire.model.Application;
 import com.smarthire.service.ApplicationService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.MalformedURLException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.List;
 
 @RestController
@@ -123,28 +120,30 @@ public class ApplicationController {
 
     /**
      * Lets a recruiter view/download the resume a candidate attached
-     * when they applied.
+     * when they applied. Resume bytes live in MongoDB (Base64), not on
+     * local disk, so they survive Render restarts/redeploys.
      */
     @GetMapping("/{applicationId}/resume")
     public ResponseEntity<?> downloadResume(@PathVariable String applicationId) {
         try {
             Application application = applicationService.getApplicationById(applicationId);
-            if (application.getResumeUrl() == null) {
+            if (application.getResumeData() == null) {
                 return ResponseEntity.badRequest().body("No resume attached to this application");
             }
-            Path filePath = Paths.get(application.getResumeUrl()).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
-            if (!resource.exists() || !resource.isReadable()) {
-                return ResponseEntity.badRequest().body("Resume file not found");
-            }
-            String fileName = filePath.getFileName().toString();
+            byte[] fileBytes = Base64.getDecoder().decode(application.getResumeData());
+            ByteArrayResource resource = new ByteArrayResource(fileBytes);
+
+            String fileName = application.getResumeFileName() != null
+                ? application.getResumeFileName() : "resume";
+            MediaType mediaType = application.getResumeContentType() != null
+                ? MediaType.parseMediaType(application.getResumeContentType())
+                : MediaType.APPLICATION_OCTET_STREAM;
+
             return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(mediaType)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                     "attachment; filename=\"" + fileName + "\"")
                 .body(resource);
-        } catch (MalformedURLException e) {
-            return ResponseEntity.badRequest().body("Invalid resume path");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
