@@ -34,15 +34,27 @@ public class UserService {
     }
 
     public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmail(normalizeEmail(email))
             .orElseThrow(() -> new RuntimeException(
                 "User not found with email: " + email));
     }
 
     public User createUser(User user) {
-        if (userRepository.existsByEmail(user.getEmail()))
+        String normalizedEmail = normalizeEmail(user.getEmail());
+        user.setEmail(normalizedEmail);
+        if (userRepository.existsByEmail(normalizedEmail))
             throw new RuntimeException("Email already exists");
         return userRepository.save(user);
+    }
+
+    /**
+     * Trims and lower-cases an email so the same address ("Test@Gmail.com"
+     * vs "test@gmail.com") is always treated as the same account. Without
+     * this, a user could be told "already registered" or "no account
+     * found" depending on which casing they happened to type.
+     */
+    private String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase();
     }
 
     public void deleteUser(String id) {
@@ -53,7 +65,12 @@ public class UserService {
     }
 
     public AuthResponse register(User user) {
-        if (userRepository.existsByEmail(user.getEmail()))
+        String normalizedEmail = normalizeEmail(user.getEmail());
+        if (normalizedEmail == null || normalizedEmail.isEmpty())
+            throw new RuntimeException("Email is required");
+        user.setEmail(normalizedEmail);
+
+        if (userRepository.existsByEmail(normalizedEmail))
             throw new RuntimeException("Email already registered");
 
         if (user.getRole() != null) {
@@ -63,7 +80,15 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
-        User saved = userRepository.save(user);
+
+        User saved;
+        try {
+            saved = userRepository.save(user);
+        } catch (org.springframework.dao.DuplicateKeyException dup) {
+            // Handles a race where two requests for the same email land
+            // at nearly the same time and both pass the existsByEmail check.
+            throw new RuntimeException("Email already registered");
+        }
         String token = jwtUtil.generateToken(saved.getEmail());
 
         if ("recruiter".equals(saved.getRole())) {
@@ -78,7 +103,7 @@ public class UserService {
     }
 
     public AuthResponse login(String email, String password) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(normalizeEmail(email))
             .orElseThrow(() -> new RuntimeException(
                 "No account found with this email"));
         if (!user.isActive())
