@@ -26,7 +26,8 @@ public class User {
     private List<String> skills;
     private String experience;
     private String education;
-    private String resumeUrl;
+    private String resumeData;
+    private String resumeContentType;
     private String resumeName;
     private boolean resumeUploaded;
     private Integer matchScore;
@@ -80,8 +81,11 @@ public class User {
     public String getEducation() { return education; }
     public void setEducation(String education) { this.education = education; }
 
-    public String getResumeUrl() { return resumeUrl; }
-    public void setResumeUrl(String resumeUrl) { this.resumeUrl = resumeUrl; }
+    public String getResumeData() { return resumeData; }
+    public void setResumeData(String resumeData) { this.resumeData = resumeData; }
+
+    public String getResumeContentType() { return resumeContentType; }
+    public void setResumeContentType(String resumeContentType) { this.resumeContentType = resumeContentType; }
 
     public String getResumeName() { return resumeName; }
     public void setResumeName(String resumeName) { this.resumeName = resumeName; }
