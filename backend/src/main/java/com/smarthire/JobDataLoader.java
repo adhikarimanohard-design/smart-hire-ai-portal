@@ -5,6 +5,7 @@ import com.smarthire.model.User;
 import com.smarthire.repository.JobRepository;
 import com.smarthire.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -15,39 +16,19 @@ public class JobDataLoader implements CommandLineRunner {
 
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public JobDataLoader(JobRepository jobRepository, UserRepository userRepository) {
+    public JobDataLoader(JobRepository jobRepository, UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(String... args) throws Exception {
-        System.out.println("🔌 Attempting MongoDB connection check...");
-        try {
-            long existingJobCount = jobRepository.count();
-            System.out.println("✅ MongoDB connected successfully. Current job count: " + existingJobCount);
-        } catch (Exception e) {
-            System.err.println("❌ MongoDB connection FAILED. Check that the MONGO_URI environment " +
-                "variable is set correctly on Render (Environment tab) and that your MongoDB Atlas " +
-                "cluster's Network Access allows connections from anywhere (0.0.0.0/0), or from Render's IPs.");
-            System.err.println("❌ Underlying error: " + e.getMessage());
-            // Don't rethrow - let the app still start so /api/health stays reachable
-            // and the error is visible in logs instead of crashing the whole deploy.
-            return;
-        }
-
-        try {
-            loadJobs();
-        } catch (Exception e) {
-            System.err.println("❌ Failed to seed jobs: " + e.getMessage());
-        }
-
-        try {
-            loadUsers();
-        } catch (Exception e) {
-            System.err.println("❌ Failed to seed users: " + e.getMessage());
-        }
+        loadJobs();
+        loadUsers();
     }
 
     private void loadJobs() {
@@ -221,12 +202,15 @@ public class JobDataLoader implements CommandLineRunner {
     private void loadUsers() {
         if (userRepository.count() == 0) {
             
-            // User 1: Candidate (You!)
+            // User 1: Candidate (You!) — demo password: "password123"
             User user1 = new User();
+            user1.setFirstName("Adhikari");
+            user1.setLastName("Manohar");
             user1.setName("Adhikari Manohar");
             user1.setEmail("manohar@example.com");
+            user1.setPassword(passwordEncoder.encode("password123"));
             user1.setPhone("+91-9876543210");
-            user1.setRole("Candidate");
+            user1.setRole("candidate");
             user1.setSkills(Arrays.asList("Java", "Spring Boot", "React", "MongoDB"));
             user1.setExperience("Fresher");
             user1.setEducation("B.Tech Computer Science");
@@ -235,14 +219,19 @@ public class JobDataLoader implements CommandLineRunner {
             user1.setCreatedAt(LocalDateTime.now());
             user1.setUpdatedAt(LocalDateTime.now());
 
-            // User 2: Recruiter
+            // User 2: Recruiter — demo password: "password123"
             User user2 = new User();
+            user2.setFirstName("Sarah");
+            user2.setLastName("Recruiter");
             user2.setName("Sarah Recruiter");
             user2.setEmail("sarah@techcorp.com");
+            user2.setPassword(passwordEncoder.encode("password123"));
             user2.setPhone("+91-9876543211");
-            user2.setRole("Recruiter");
+            user2.setRole("recruiter");
+            user2.setCompanyName("TechCorp Inc");
             user2.setActive(true);
             user2.setCreatedAt(LocalDateTime.now());
+            user2.setUpdatedAt(LocalDateTime.now());
 
             userRepository.saveAll(Arrays.asList(user1, user2));
             System.out.println("✅ USERS ADDED TO MONGODB SUCCESSFULLY");
