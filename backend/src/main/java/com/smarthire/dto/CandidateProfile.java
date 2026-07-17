@@ -1,3 +1,4 @@
+
 package com.smarthire.dto;
 
 import java.time.LocalDateTime;
@@ -14,7 +15,6 @@ public class CandidateProfile {
     private List<String> skills;
     private String experience;
     private String education;
-    private String resumeUrl;
     private String resumeName;
     private String linkedinUrl;
 
@@ -53,9 +53,6 @@ public class CandidateProfile {
 
     public String getEducation() { return education; }
     public void setEducation(String education) { this.education = education; }
-
-    public String getResumeUrl() { return resumeUrl; }
-    public void setResumeUrl(String resumeUrl) { this.resumeUrl = resumeUrl; }
 
     public String getResumeName() { return resumeName; }
     public void setResumeName(String resumeName) { this.resumeName = resumeName; }
