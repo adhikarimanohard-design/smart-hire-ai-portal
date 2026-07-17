@@ -56,13 +56,17 @@ public class UserService {
         if (userRepository.existsByEmail(user.getEmail()))
             throw new RuntimeException("Email already registered");
 
+        if (user.getRole() != null) {
+            user.setRole(user.getRole().trim().toLowerCase());
+        }
+
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         User saved = userRepository.save(user);
         String token = jwtUtil.generateToken(saved.getEmail());
 
-        if ("EMPLOYER".equals(saved.getRole())) {
+        if ("recruiter".equals(saved.getRole())) {
             return new AuthResponse(token, saved.getEmail(),
                 saved.getFirstName(), saved.getLastName(),
                 saved.getId(), saved.getRole(),
@@ -83,7 +87,7 @@ public class UserService {
             throw new RuntimeException("Incorrect password");
 
         String token = jwtUtil.generateToken(user.getEmail());
-        if ("EMPLOYER".equals(user.getRole())) {
+        if ("recruiter".equals(user.getRole())) {
             return new AuthResponse(token, user.getEmail(),
                 user.getFirstName(), user.getLastName(),
                 user.getId(), user.getRole(),
@@ -139,13 +143,13 @@ public class UserService {
     public List<User> searchCandidatesBySkill(String skill) {
         return userRepository.findBySkillsContainingIgnoreCase(skill)
             .stream()
-            .filter(u -> "CANDIDATE".equals(u.getRole()))
+            .filter(u -> "candidate".equals(u.getRole()))
             .filter(User::isActive)
             .collect(Collectors.toList());
     }
 
     public List<User> getAllCandidates() {
-        return userRepository.findByRole("CANDIDATE")
+        return userRepository.findByRole("candidate")
             .stream()
             .filter(User::isActive)
             .collect(Collectors.toList());
