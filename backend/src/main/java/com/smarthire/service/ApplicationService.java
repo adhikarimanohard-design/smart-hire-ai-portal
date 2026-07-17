@@ -1,3 +1,4 @@
+
 package com.smarthire.service;
 
 import com.smarthire.dto.BulkStatusRequest;
@@ -12,9 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -123,7 +121,6 @@ public class ApplicationService {
         profile.setSkills(user.getSkills());
         profile.setExperience(user.getExperience());
         profile.setEducation(user.getEducation());
-        profile.setResumeUrl(user.getResumeUrl());
         profile.setResumeName(user.getResumeName());
         profile.setLinkedinUrl(user.getLinkedinUrl());
         profile.setApplicationId(application.getId());
@@ -181,15 +178,14 @@ public class ApplicationService {
         application.setCoverLetter(coverLetter);
 
         if (resume != null && !resume.isEmpty()) {
-            String uploadDir = "uploads/resumes/";
-            Files.createDirectories(Paths.get(uploadDir));
-            String fileName = userId + "_" + jobId + "_" + resume.getOriginalFilename();
-            Path filePath = Paths.get(uploadDir + fileName);
-            Files.write(filePath, resume.getBytes());
-            application.setResumeUrl(filePath.toString());
+            String base64Data = java.util.Base64.getEncoder().encodeToString(resume.getBytes());
+            application.setResumeData(base64Data);
+            application.setResumeFileName(resume.getOriginalFilename());
+            application.setResumeContentType(resume.getContentType());
 
             // Keep the candidate's profile in sync with their latest resume
-            user.setResumeUrl(filePath.toString());
+            user.setResumeData(base64Data);
+            user.setResumeContentType(resume.getContentType());
             user.setResumeName(resume.getOriginalFilename());
             user.setResumeUploaded(true);
             user.setUpdatedAt(LocalDateTime.now());
@@ -227,7 +223,6 @@ public class ApplicationService {
             profile.setRecruiterNotes(app.getRecruiterNotes());
             profile.setAppliedAt(app.getAppliedAt());
             profile.setUpdatedAt(app.getUpdatedAt());
-            profile.setResumeUrl(app.getResumeUrl());
             profile.setPhone(app.getCandidatePhone());
 
             userRepository.findById(app.getUserId()).ifPresentOrElse(user -> {
