@@ -4,7 +4,8 @@ import './index.css';
 /* ================================
    CONFIG
 ================================ */
-const API_BASE = 'https://smart-hire-ai-portal-2-52o9.onrender.com';
+const API_BASE = 'https://smart-hire-ai-portal-2-d0rz.onrender.com/api';
+
 /* ================================
    COMPANY EMOJIS
 ================================ */
@@ -230,9 +231,13 @@ export default function App() {
       const res = await fetch(`${API_BASE}/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: pass }),
+        body: JSON.stringify({ email: email.toLowerCase(), password: pass }),
       });
-      if (!res.ok) { showToast('❌ Invalid email or password'); return; }
+      if (!res.ok) {
+        const errMsg = await res.text().catch(() => '');
+        showToast(`❌ ${errMsg || 'Invalid email or password'}`);
+        return;
+      }
       const data = await res.json();
       const user = {
         id: data.userId,
@@ -270,9 +275,16 @@ export default function App() {
       const res = await fetch(`${API_BASE}/users/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, password: pass, role }),
+        body: JSON.stringify({ firstName, lastName, email: email.toLowerCase(), password: pass, role }),
       });
-      if (!res.ok) { showToast('❌ Email already registered'); return; }
+      if (!res.ok) {
+        // Show the *actual* reason registration failed instead of always
+        // blaming "email already registered" — that was masking real
+        // errors (network issues, validation failures, etc).
+        const errMsg = await res.text().catch(() => '');
+        showToast(`❌ ${errMsg || 'Registration failed. Please try again.'}`);
+        return;
+      }
       const data = await res.json();
       const user = {
         id: data.userId,
