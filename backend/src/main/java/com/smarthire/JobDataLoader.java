@@ -1,4 +1,4 @@
-Package com.smarthire;
+package com.smarthire;
 
 import com.smarthire.model.Job;
 import com.smarthire.model.User;
