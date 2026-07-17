@@ -17,7 +17,9 @@ public class Application {
     private String candidateEmail;
     private String candidatePhone;
     private String coverLetter;
-    private String resumeUrl;
+    private String resumeData;
+    private String resumeFileName;
+    private String resumeContentType;
     private String status;
     private Integer matchScore;
     private String recruiterNotes;
@@ -51,8 +53,14 @@ public class Application {
     public String getCoverLetter() { return coverLetter; }
     public void setCoverLetter(String coverLetter) { this.coverLetter = coverLetter; }
 
-    public String getResumeUrl() { return resumeUrl; }
-    public void setResumeUrl(String resumeUrl) { this.resumeUrl = resumeUrl; }
+    public String getResumeData() { return resumeData; }
+    public void setResumeData(String resumeData) { this.resumeData = resumeData; }
+
+    public String getResumeFileName() { return resumeFileName; }
+    public void setResumeFileName(String resumeFileName) { this.resumeFileName = resumeFileName; }
+
+    public String getResumeContentType() { return resumeContentType; }
+    public void setResumeContentType(String resumeContentType) { this.resumeContentType = resumeContentType; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
