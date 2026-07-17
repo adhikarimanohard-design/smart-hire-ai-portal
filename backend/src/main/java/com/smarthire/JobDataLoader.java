@@ -23,8 +23,31 @@ public class JobDataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        loadJobs();
-        loadUsers();
+        System.out.println("🔌 Attempting MongoDB connection check...");
+        try {
+            long existingJobCount = jobRepository.count();
+            System.out.println("✅ MongoDB connected successfully. Current job count: " + existingJobCount);
+        } catch (Exception e) {
+            System.err.println("❌ MongoDB connection FAILED. Check that the MONGO_URI environment " +
+                "variable is set correctly on Render (Environment tab) and that your MongoDB Atlas " +
+                "cluster's Network Access allows connections from anywhere (0.0.0.0/0), or from Render's IPs.");
+            System.err.println("❌ Underlying error: " + e.getMessage());
+            // Don't rethrow - let the app still start so /api/health stays reachable
+            // and the error is visible in logs instead of crashing the whole deploy.
+            return;
+        }
+
+        try {
+            loadJobs();
+        } catch (Exception e) {
+            System.err.println("❌ Failed to seed jobs: " + e.getMessage());
+        }
+
+        try {
+            loadUsers();
+        } catch (Exception e) {
+            System.err.println("❌ Failed to seed users: " + e.getMessage());
+        }
     }
 
     private void loadJobs() {
