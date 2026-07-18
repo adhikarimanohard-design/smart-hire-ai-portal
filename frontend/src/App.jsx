@@ -20,7 +20,6 @@ const API_BASE = 'https://smart-hire-ai-portal-2-52o9.onrender.com/api';
    a cold start doesn't look like a hard failure.
 ================================ */
 async function fetchWithRetry(url, options = {}, retries = 3, delayMs = 4000, timeoutMs = 15000) {
-  let lastErr;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const controller = new AbortController();
@@ -29,22 +28,14 @@ async function fetchWithRetry(url, options = {}, retries = 3, delayMs = 4000, ti
       clearTimeout(timeout);
       return res;
     } catch (err) {
-      lastErr = err;
       const isLastAttempt = attempt === retries;
       // Network error / timeout / CORS failure — likely a cold-starting
       // or unreachable backend. Retry with backoff unless this was the
       // last attempt, in which case let the caller handle the failure.
-      if (isLastAttempt) {
-        // Give a clearer message than the browser's bare "Failed to fetch"
-        if (err.name === 'AbortError') {
-          throw new Error('Server took too long to respond. It may be waking up — please try again in a moment.');
-        }
-        throw new Error('Could not reach the server. Please check your connection and try again.');
-      }
+      if (isLastAttempt) throw err;
       await new Promise((r) => setTimeout(r, delayMs));
     }
   }
-  throw lastErr;
 }
 
 /* ================================
@@ -485,7 +476,7 @@ export default function App() {
         method: 'POST',
         headers: { Authorization: `Bearer ${currentUser.token}` },
         body: formData,
-      }, 3, 4000, 25000);
+      }, 3, 4000, 40000);
 
       clearInterval(progressIntervalRef.current);
       setUploadingProgress(100);
@@ -521,7 +512,14 @@ export default function App() {
       clearInterval(progressIntervalRef.current);
       setShowUploadProgress(false);
       setResumeSubmitting(false);
-      showToast(`❌ ${err.message || 'Could not submit application. Try again.'}`);
+      // A TypeError/AbortError here means the request never got a
+      // response at all — almost always a sleeping/unreachable backend,
+      // not a real application error.
+      showToast(
+        err.name === 'AbortError' || err instanceof TypeError
+          ? '❌ Could not reach the server. It may be waking up — please try again in ~30s.'
+          : `❌ ${err.message || 'Could not submit application. Try again.'}`
+      );
     }
   }
 
@@ -624,7 +622,7 @@ export default function App() {
     setApplicantsLoading(true);
     setApplicants([]);
     try {
-      const res = await fetchWithRetry(`${API_BASE}/jobs/${job.id}/applicants`, {
+      const res = await fetch(`${API_BASE}/jobs/${job.id}/applicants`, {
         headers: { Authorization: `Bearer ${currentUser.token}` },
       });
       if (res.ok) setApplicants(await res.json());
@@ -637,7 +635,7 @@ export default function App() {
 
   async function updateApplicantStatus(applicationId, status) {
     try {
-      const res = await fetchWithRetry(`${API_BASE}/applications/${applicationId}/status`, {
+      const res = await fetch(`${API_BASE}/applications/${applicationId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
