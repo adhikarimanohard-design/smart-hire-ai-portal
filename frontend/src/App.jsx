@@ -1,3 +1,5 @@
+
+// frontend/src/App.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './index.css';
 
@@ -8,16 +10,6 @@ const API_BASE = 'https://smart-hire-ai-portal-2-52o9.onrender.com/api';
 
 /* ================================
    RESILIENT FETCH
-   The backend is hosted on Render's free
-   tier, which spins the server down after
-   ~15 min of inactivity. The *first* request
-   after that can take 30-60s to respond (or
-   fail outright) while the instance wakes up —
-   this is what makes "create account" / "jobs"
-   look completely broken when really the
-   server is just booting. This wrapper retries
-   a few times with backoff before giving up, so
-   a cold start doesn't look like a hard failure.
 ================================ */
 async function fetchWithRetry(url, options = {}, retries = 3, delayMs = 4000, timeoutMs = 15000) {
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -29,9 +21,6 @@ async function fetchWithRetry(url, options = {}, retries = 3, delayMs = 4000, ti
       return res;
     } catch (err) {
       const isLastAttempt = attempt === retries;
-      // Network error / timeout / CORS failure — likely a cold-starting
-      // or unreachable backend. Retry with backoff unless this was the
-      // last attempt, in which case let the caller handle the failure.
       if (isLastAttempt) throw err;
       await new Promise((r) => setTimeout(r, delayMs));
     }
@@ -81,8 +70,7 @@ export default function App() {
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  // landing preview toggle (for logged-out visitors)
-  const [landingView, setLandingView] = useState('candidate'); // 'candidate' | 'recruiter'
+  const [landingView, setLandingView] = useState('candidate');
 
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = sessionStorage.getItem('sh_user');
@@ -158,7 +146,7 @@ export default function App() {
   }, []);
 
   /* ================================
-     LOAD JOBS (candidate view)
+     LOAD JOBS
   ================================ */
   const loadJobs = useCallback(async () => {
     setJobsLoading(true);
@@ -170,9 +158,6 @@ export default function App() {
       setAllJobs(data);
     } catch (err) {
       console.error('Failed to load jobs:', err);
-      // TypeError here almost always means the request never reached the
-      // server (offline, CORS block, or the Render instance failed to
-      // wake up in time) rather than the API returning an error.
       setJobsError(
         err.name === 'AbortError' || err instanceof TypeError
           ? 'Server is taking longer than usual to respond. It may be waking up from sleep — please try again in a moment.'
@@ -205,9 +190,6 @@ export default function App() {
       ]);
       if (statsRes.ok) setRecruiterStats(await statsRes.json());
       if (jobsRes.ok) setRecruiterJobs(await jobsRes.json());
-      // Previously this only threw when BOTH calls failed, so a single
-      // flaky request (e.g. during a Render cold start) would silently
-      // leave the job list or stats stale with no error shown at all.
       if (!statsRes.ok || !jobsRes.ok) throw new Error('Failed to fully refresh dashboard');
     } catch (err) {
       console.error('Failed to load recruiter data:', err);
@@ -265,7 +247,7 @@ export default function App() {
   }, [modalOpen, loginModalOpen, resumeModalOpen, postJobModalOpen, applicantsModalOpen]);
 
   /* ================================
-     AUTH: LOGIN
+     AUTH
   ================================ */
   async function handleLogin() {
     const email = loginEmail.trim();
@@ -302,9 +284,6 @@ export default function App() {
       setLoginModalOpen(false);
       showToast(`✅ Welcome back, ${user.firstName}!`);
     } catch (err) {
-      // A TypeError/AbortError here means the request never got a
-      // response at all — almost always a sleeping/unreachable backend,
-      // not bad credentials.
       showToast(
         err.name === 'AbortError' || err instanceof TypeError
           ? '❌ Could not reach the server. It may be waking up — please try again in ~30s.'
@@ -313,9 +292,6 @@ export default function App() {
     }
   }
 
-  /* ================================
-     AUTH: REGISTER
-  ================================ */
   async function handleRegister() {
     const firstName = regFirstName.trim();
     const lastName = regLastName.trim();
@@ -333,9 +309,6 @@ export default function App() {
         body: JSON.stringify({ firstName, lastName, email: email.toLowerCase(), password: pass, role }),
       });
       if (!res.ok) {
-        // Show the *actual* reason registration failed instead of always
-        // blaming "email already registered" — that was masking real
-        // errors (network issues, validation failures, etc).
         const errMsg = await res.text().catch(() => '');
         showToast(`❌ ${errMsg || 'Registration failed. Please try again.'}`);
         return;
@@ -357,9 +330,6 @@ export default function App() {
       setLoginModalOpen(false);
       showToast(`🎉 Welcome, ${firstName}!`);
     } catch (err) {
-      // A TypeError/AbortError means the request never reached the
-      // server — the backend is most likely asleep, crashed, or
-      // unreachable (CORS/network), not a validation problem.
       showToast(
         err.name === 'AbortError' || err instanceof TypeError
           ? '❌ Could not reach the server. It may be waking up — please try again in ~30s.'
@@ -387,9 +357,7 @@ export default function App() {
   }
 
   /* ================================
-     APPLY MODAL (candidate) — resume is
-     attached at the point of applying,
-     there is no standalone/central resume.
+     APPLY MODAL
   ================================ */
   function openApplyModal(job) {
     if (!currentUser) {
@@ -432,9 +400,6 @@ export default function App() {
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ];
-    // Browsers/OSes don't reliably report file.type (often '' or
-    // application/octet-stream for .doc/.docx and sometimes .pdf), so fall
-    // back to checking the file extension rather than rejecting the file.
     const validExtension = /\.(pdf|docx?)$/i.test(file.name);
     const validMimeType = validTypes.includes(file.type);
     if (!validMimeType && !validExtension) {
@@ -520,9 +485,6 @@ export default function App() {
       clearInterval(progressIntervalRef.current);
       setShowUploadProgress(false);
       setResumeSubmitting(false);
-      // A TypeError/AbortError here means the request never got a
-      // response at all — almost always a sleeping/unreachable backend,
-      // not a real application error.
       showToast(
         err.name === 'AbortError' || err instanceof TypeError
           ? '❌ Could not reach the server. It may be waking up — please try again in ~30s.'
@@ -532,7 +494,7 @@ export default function App() {
   }
 
   /* ================================
-     JOB MODAL (candidate)
+     JOB MODAL
   ================================ */
   function openModal(job) {
     setCurrentJob(job);
@@ -543,7 +505,7 @@ export default function App() {
   }
 
   /* ================================
-     SEARCH (candidate)
+     SEARCH
   ================================ */
   function performSearch(q) {
     setSearchQuery(q);
@@ -606,9 +568,6 @@ export default function App() {
       if (!res.ok) throw new Error('Failed to post job');
       showToast('✅ Job posted successfully!');
       setPostJobModalOpen(false);
-      // Awaited (was fire-and-forget before) so the dashboard is
-      // guaranteed to reflect the new job, with retry baked in for a
-      // still-warming-up backend right after the POST above.
       await loadRecruiterData();
     } catch (err) {
       showToast(
@@ -698,7 +657,6 @@ export default function App() {
       });
       if (!res.ok) throw new Error('Delete failed');
       showToast('🗑️ Job deleted permanently');
-      // Optimistically drop it from the list instead of waiting on a refetch
       setRecruiterJobs((prev) => prev.filter((j) => j.id !== jobId));
       loadRecruiterData();
     } catch (err) {
@@ -765,10 +723,6 @@ export default function App() {
       {/* MAIN */}
       <main>
         <div className="container">
-
-          {/* ============================
-              LOGGED OUT: HERO + PREVIEW
-          ============================ */}
           {!currentUser && (
             <>
               <div className="hero">
@@ -813,7 +767,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* ROLE TOGGLE PREVIEW */}
               <div className="role-toggle fade-up delay-4">
                 <button
                   className={`role-tab ${landingView === 'candidate' ? 'active' : ''}`}
@@ -865,7 +818,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* SEARCH (candidate teaser, logged out) */}
               {landingView === 'candidate' && (
                 <div className="search-wrap fade-up">
                   <div className="search-box">
@@ -893,9 +845,6 @@ export default function App() {
             </>
           )}
 
-          {/* ============================
-              LOGGED IN — CANDIDATE VIEW
-          ============================ */}
           {currentUser && !isRecruiter && (
             <>
               <div className="hero" style={{ paddingTop: 'clamp(24px, 4vw, 40px)' }}>
@@ -1044,9 +993,6 @@ export default function App() {
             </>
           )}
 
-          {/* ============================
-              LOGGED IN — RECRUITER VIEW
-          ============================ */}
           {currentUser && isRecruiter && (
             <div style={{ paddingTop: 'clamp(24px, 4vw, 40px)' }}>
               <div className="dash-header fade-up">
@@ -1180,7 +1126,7 @@ export default function App() {
         </div>
       </main>
 
-      {/* JOB DETAIL MODAL (candidate) */}
+      {/* JOB DETAIL MODAL */}
       <div className={`modal-overlay ${modalOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) closeModalBtn(); }}>
         <div className="modal">
           {currentJob && (() => {
@@ -1309,7 +1255,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* APPLY MODAL — resume attached at point of application (candidate) */}
+      {/* APPLY MODAL */}
       <div className={`modal-overlay ${resumeModalOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) closeResumeModal(); }}>
         <div className="modal" style={{ maxWidth: 520 }}>
           <div className="modal-header">
@@ -1327,12 +1273,14 @@ export default function App() {
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
+              onClick={() => fileInputRef.current && fileInputRef.current.click()}
             >
               <input
                 type="file"
                 accept=".pdf,.doc,.docx"
                 ref={fileInputRef}
                 onChange={handleFileSelect}
+                style={{ display: 'none' }}
               />
               <div className="drop-zone-icon">📁</div>
               <div className="drop-zone-title">Drop your resume here</div>
@@ -1351,7 +1299,7 @@ export default function App() {
                       : (selectedFile.size / 1024 / 1024).toFixed(1) + ' MB'}
                   </div>
                 </div>
-                <div className="file-preview-remove" onClick={removeFile} title="Remove">✕</div>
+                <div className="file-preview-remove" onClick={(e) => { e.stopPropagation(); removeFile(); }} title="Remove">✕</div>
               </div>
             )}
 
@@ -1387,7 +1335,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* POST JOB MODAL (recruiter) */}
+      {/* POST JOB MODAL */}
       <div className={`modal-overlay ${postJobModalOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setPostJobModalOpen(false); }}>
         <div className="modal" style={{ maxWidth: 560 }}>
           <div className="modal-header">
@@ -1445,7 +1393,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* APPLICANTS MODAL (recruiter) */}
+      {/* APPLICANTS MODAL */}
       <div className={`modal-overlay ${applicantsModalOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setApplicantsModalOpen(false); }}>
         <div className="modal" style={{ maxWidth: 620 }}>
           <div className="modal-header">
