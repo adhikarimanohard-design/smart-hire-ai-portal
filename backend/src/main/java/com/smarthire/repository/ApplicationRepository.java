@@ -21,4 +21,5 @@ public interface ApplicationRepository
     List<Application> findByJobIdIn(List<String> jobIds);
     long countByJobId(String jobId);
     long countByJobIdAndStatus(String jobId, String status);
+    void deleteByJobId(String jobId);
 }
