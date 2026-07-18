@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/recruiter")
-@CrossOrigin(origins = "*")
 public class RecruiterController {
 
     @Autowired
@@ -20,18 +19,7 @@ public class RecruiterController {
     @GetMapping("/{recruiterId}/stats")
     public ResponseEntity<?> getDashboardStats(@PathVariable String recruiterId) {
         try {
-            RecruiterStats stats = recruiterService.getDashboardStats(recruiterId);
-            return ResponseEntity.ok(stats);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/{recruiterId}/jobs")
-    public ResponseEntity<?> getRecruiterJobs(@PathVariable String recruiterId) {
-        try {
-            List<Job> jobs = recruiterService.getJobsByRecruiter(recruiterId);
-            return ResponseEntity.ok(jobs);
+            return ResponseEntity.ok(recruiterService.getDashboardStats(recruiterId));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
