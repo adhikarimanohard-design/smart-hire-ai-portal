@@ -1,3 +1,4 @@
+
 package com.smarthire.controller;
 
 import com.smarthire.dto.CandidateProfile;
@@ -5,6 +6,8 @@ import com.smarthire.model.Job;
 import com.smarthire.service.ApplicationService;
 import com.smarthire.service.JobService;
 import com.smarthire.service.RecommendationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +19,8 @@ import java.util.List;
 @RequestMapping("/api/jobs")
 @CrossOrigin(origins = "*")
 public class JobController {
+
+    private static final Logger log = LoggerFactory.getLogger(JobController.class);
 
     @Autowired private JobService jobService;
     @Autowired private RecommendationService recommendationService;
@@ -92,12 +97,6 @@ public class JobController {
         }
     }
 
-    /**
-     * Permanently deletes a job posting and its applications. This is
-     * what powers the "Delete Job" button on the recruiter dashboard —
-     * distinct from the soft-close above, which just deactivates the
-     * listing so it can be reopened later.
-     */
     @DeleteMapping("/{id}/permanent")
     public ResponseEntity<?> permanentlyDeleteJob(@PathVariable String id) {
         try {
@@ -117,30 +116,25 @@ public class JobController {
         }
     }
 
-    /**
-     * Candidate applies to a job. Resume is attached here, at the point
-     * of application (multipart/form-data) — there is no central resume.
-     * This is what makes the application (with resume) show up on the
-     * recruiter's dashboard.
-     */
     @PostMapping("/{id}/apply")
     public ResponseEntity<?> applyToJob(
             @PathVariable String id,
             @RequestParam("userId") String userId,
             @RequestParam(value = "resume", required = false) MultipartFile resume,
             @RequestParam(value = "coverLetter", required = false) String coverLetter) {
+        log.info("APPLY REQUEST RECEIVED: jobId={}, userId={}, resumePresent={}, resumeSize={}",
+            id, userId, resume != null, resume != null ? resume.getSize() : 0);
         try {
-            return ResponseEntity.ok(
-                applicationService.applyToJob(id, userId, resume, coverLetter));
+            var result = applicationService.applyToJob(id, userId, resume, coverLetter);
+            log.info("APPLY SUCCEEDED: jobId={}, userId={}, applicationId={}",
+                id, userId, result.getId());
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
+            log.error("APPLY FAILED: jobId={}, userId={}, error={}", id, userId, e.toString(), e);
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    /**
-     * Full applicant list (candidate info + resume) for a job, used by
-     * the recruiter dashboard's "View Applicants" modal.
-     */
     @GetMapping("/{id}/applicants")
     public ResponseEntity<List<CandidateProfile>> getJobApplicants(
             @PathVariable String id) {
