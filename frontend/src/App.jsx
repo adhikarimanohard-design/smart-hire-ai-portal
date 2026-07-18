@@ -1,3 +1,4 @@
+// frontend/src/App.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './index.css';
 
@@ -447,7 +448,7 @@ export default function App() {
         method: 'POST',
         headers: { Authorization: `Bearer ${currentUser.token}` },
         body: formData,
-      }, 3, 4000, 40000);
+      }, 3, 4000, 60000);
 
       clearInterval(progressIntervalRef.current);
       setUploadingProgress(100);
