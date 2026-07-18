@@ -5,7 +5,7 @@ import java.util.List;
 
 public class CandidateProfile {
 
-    // From User — safe fields only, no password
+    // From User — safe fields only (no password)
     private String userId;
     private String firstName;
     private String lastName;
@@ -14,7 +14,8 @@ public class CandidateProfile {
     private List<String> skills;
     private String experience;
     private String education;
-    private String resumeName;
+    private String resumeName;   // original filename e.g. "John_CV.pdf"
+    private boolean hasResume;   // true = file on disk, show download link
     private String linkedinUrl;
 
     // From Application
@@ -55,6 +56,9 @@ public class CandidateProfile {
 
     public String getResumeName() { return resumeName; }
     public void setResumeName(String resumeName) { this.resumeName = resumeName; }
+
+    public boolean isHasResume() { return hasResume; }
+    public void setHasResume(boolean hasResume) { this.hasResume = hasResume; }
 
     public String getLinkedinUrl() { return linkedinUrl; }
     public void setLinkedinUrl(String linkedinUrl) { this.linkedinUrl = linkedinUrl; }
