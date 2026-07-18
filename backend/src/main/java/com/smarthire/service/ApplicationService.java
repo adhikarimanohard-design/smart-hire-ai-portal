@@ -102,6 +102,17 @@ public class ApplicationService {
             .orElse("resume.pdf");
     }
 
+    public String getResumeContentType(String applicationId) {
+        String name = getResumeName(applicationId);
+        if (name == null) return "application/octet-stream";
+        String lower = name.toLowerCase();
+        if (lower.endsWith(".pdf")) return "application/pdf";
+        if (lower.endsWith(".doc")) return "application/msword";
+        if (lower.endsWith(".docx"))
+            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        return "application/octet-stream";
+    }
+
     public boolean hasResume(String applicationId) {
         return applicationRepository.findById(applicationId)
             .map(a -> a.getResumeUrl() != null && !a.getResumeUrl().isEmpty())
