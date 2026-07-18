@@ -5,14 +5,13 @@ import com.smarthire.dto.CandidateProfile;
 import com.smarthire.model.Application;
 import com.smarthire.service.ApplicationService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/applications")
@@ -22,24 +21,24 @@ public class ApplicationController {
     @Autowired
     private ApplicationService applicationService;
 
+    // ── Fallback JSON apply (no file) ──────────────────────────────────────────
     @PostMapping
-    public ResponseEntity<?> submitApplication(
-            @RequestBody Application application) {
+    public ResponseEntity<?> submitApplication(@RequestBody Application application) {
         try {
-            return ResponseEntity.ok(
-                applicationService.submitApplication(application));
+            return ResponseEntity.ok(applicationService.submitApplication(application));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
+    // ── Candidate: my applications ─────────────────────────────────────────────
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Application>> getUserApplications(
             @PathVariable String userId) {
-        return ResponseEntity.ok(
-            applicationService.getUserApplications(userId));
+        return ResponseEntity.ok(applicationService.getUserApplications(userId));
     }
 
+    // ── Recruiter: all applicants for a job ────────────────────────────────────
     @GetMapping("/job/{jobId}")
     public ResponseEntity<List<Application>> getJobApplications(
             @PathVariable String jobId,
@@ -48,6 +47,7 @@ public class ApplicationController {
             applicationService.getJobApplicationsSorted(jobId, sortBy));
     }
 
+    // ── Recruiter: filter by status ────────────────────────────────────────────
     @GetMapping("/job/{jobId}/status")
     public ResponseEntity<List<Application>> getJobApplicationsByStatus(
             @PathVariable String jobId,
@@ -56,42 +56,66 @@ public class ApplicationController {
             applicationService.getJobApplicationsByStatus(jobId, status));
     }
 
+    // ── Recruiter: full candidate profile card ─────────────────────────────────
     @GetMapping("/{applicationId}/profile")
     public ResponseEntity<?> getCandidateProfile(
             @PathVariable String applicationId) {
         try {
-            CandidateProfile profile =
-                applicationService.getCandidateFullProfile(applicationId);
-            return ResponseEntity.ok(profile);
+            return ResponseEntity.ok(
+                applicationService.getCandidateFullProfile(applicationId));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
+    /**
+     * RESUME DOWNLOAD — reads file from disk and streams it to the recruiter.
+     * Old code decoded Base64 from MongoDB; this reads the saved file instead.
+     */
+    @GetMapping("/{applicationId}/resume")
+    public ResponseEntity<?> downloadResume(@PathVariable String applicationId) {
+        try {
+            byte[] bytes    = applicationService.getResumeBytes(applicationId);
+            String fileName = applicationService.getResumeName(applicationId);
+
+            MediaType mediaType = fileName.toLowerCase().endsWith(".pdf")
+                ? MediaType.APPLICATION_PDF
+                : MediaType.APPLICATION_OCTET_STREAM;
+
+            return ResponseEntity.ok()
+                .contentType(mediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                    "attachment; filename=\"" + fileName + "\"")
+                .body(bytes);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // ── Recruiter: update status (PATCH) ───────────────────────────────────────
     @PatchMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(
             @PathVariable String id,
-            @RequestBody java.util.Map<String, String> body) {
+            @RequestBody Map<String, String> body) {
         try {
-            String status = body.get("status");
             return ResponseEntity.ok(
-                applicationService.updateApplicationStatus(id, status));
+                applicationService.updateApplicationStatus(id, body.get("status")));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
+    // ── Recruiter: bulk status update ──────────────────────────────────────────
     @PutMapping("/bulk-status")
-    public ResponseEntity<?> bulkUpdateStatus(
-            @RequestBody BulkStatusRequest request) {
+    public ResponseEntity<?> bulkUpdateStatus(@RequestBody BulkStatusRequest request) {
         try {
-            return ResponseEntity.ok(
-                applicationService.bulkUpdateStatus(request));
+            return ResponseEntity.ok(applicationService.bulkUpdateStatus(request));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
+    // ── Recruiter: notes ───────────────────────────────────────────────────────
     @PutMapping("/{applicationId}/notes")
     public ResponseEntity<?> updateNotes(
             @PathVariable String applicationId,
@@ -104,11 +128,11 @@ public class ApplicationController {
         }
     }
 
+    // ── Admin ──────────────────────────────────────────────────────────────────
     @GetMapping("/status/{status}")
     public ResponseEntity<List<Application>> getApplicationsByStatus(
             @PathVariable String status) {
-        return ResponseEntity.ok(
-            applicationService.getApplicationsByStatus(status));
+        return ResponseEntity.ok(applicationService.getApplicationsByStatus(status));
     }
 
     @GetMapping("/recruiter/{recruiterId}")
@@ -116,36 +140,5 @@ public class ApplicationController {
             @PathVariable String recruiterId) {
         return ResponseEntity.ok(
             applicationService.getAllApplicationsForRecruiter(recruiterId));
-    }
-
-    /**
-     * Lets a recruiter view/download the resume a candidate attached
-     * when they applied. Resume bytes live in MongoDB (Base64), not on
-     * local disk, so they survive Render restarts/redeploys.
-     */
-    @GetMapping("/{applicationId}/resume")
-    public ResponseEntity<?> downloadResume(@PathVariable String applicationId) {
-        try {
-            Application application = applicationService.getApplicationById(applicationId);
-            if (application.getResumeData() == null) {
-                return ResponseEntity.badRequest().body("No resume attached to this application");
-            }
-            byte[] fileBytes = Base64.getDecoder().decode(application.getResumeData());
-            ByteArrayResource resource = new ByteArrayResource(fileBytes);
-
-            String fileName = application.getResumeFileName() != null
-                ? application.getResumeFileName() : "resume";
-            MediaType mediaType = application.getResumeContentType() != null
-                ? MediaType.parseMediaType(application.getResumeContentType())
-                : MediaType.APPLICATION_OCTET_STREAM;
-
-            return ResponseEntity.ok()
-                .contentType(mediaType)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=\"" + fileName + "\"")
-                .body(resource);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
     }
 }
