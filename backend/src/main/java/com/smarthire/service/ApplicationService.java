@@ -1,3 +1,4 @@
+
 package com.smarthire.service;
 
 import com.smarthire.dto.BulkStatusRequest;
@@ -68,7 +69,11 @@ public class ApplicationService {
             String uploadDir = "uploads/resumes/";
             Files.createDirectories(Paths.get(uploadDir));
 
-            String safeOriginal = resume.getOriginalFilename()
+            String originalName = resume.getOriginalFilename();
+            if (originalName == null || originalName.isBlank()) {
+                originalName = "resume_" + System.currentTimeMillis();
+            }
+            String safeOriginal = originalName
                 .replaceAll("[^a-zA-Z0-9._-]", "_");
             String fileName = userId + "_" + jobId + "_" + safeOriginal;
             Path   filePath = Paths.get(uploadDir + fileName);
