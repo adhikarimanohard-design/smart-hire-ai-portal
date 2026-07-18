@@ -69,18 +69,25 @@ public class ApplicationController {
     }
 
     /**
-     * RESUME DOWNLOAD — reads file from disk and streams it to the recruiter.
-     * Old code decoded Base64 from MongoDB; this reads the saved file instead.
+     * RESUME DOWNLOAD — reads bytes straight out of the MongoDB document
+     * and streams them to the recruiter. Nothing is read from local disk,
+     * so this keeps working across restarts, spin-downs, and redeploys.
      */
     @GetMapping("/{applicationId}/resume")
     public ResponseEntity<?> downloadResume(@PathVariable String applicationId) {
         try {
-            byte[] bytes    = applicationService.getResumeBytes(applicationId);
-            String fileName = applicationService.getResumeName(applicationId);
+            byte[] bytes       = applicationService.getResumeBytes(applicationId);
+            String fileName    = applicationService.getResumeName(applicationId);
+            String contentType = applicationService.getResumeContentType(applicationId);
 
-            MediaType mediaType = fileName.toLowerCase().endsWith(".pdf")
-                ? MediaType.APPLICATION_PDF
-                : MediaType.APPLICATION_OCTET_STREAM;
+            MediaType mediaType;
+            try {
+                mediaType = MediaType.parseMediaType(contentType);
+            } catch (Exception parseErr) {
+                mediaType = fileName.toLowerCase().endsWith(".pdf")
+                    ? MediaType.APPLICATION_PDF
+                    : MediaType.APPLICATION_OCTET_STREAM;
+            }
 
             return ResponseEntity.ok()
                 .contentType(mediaType)
