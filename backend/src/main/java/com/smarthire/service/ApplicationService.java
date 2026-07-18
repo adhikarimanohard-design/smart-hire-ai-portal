@@ -52,8 +52,9 @@ public class ApplicationService {
         application.setCoverLetter(coverLetter != null ? coverLetter : "");
 
         if (resume != null && !resume.isEmpty()) {
-            String safeOriginal = resume.getOriginalFilename()
-                .replaceAll("[^a-zA-Z0-9._-]", "_");
+            String originalName = resume.getOriginalFilename() != null
+                ? resume.getOriginalFilename() : "resume";
+            String safeOriginal = originalName.replaceAll("[^a-zA-Z0-9._-]", "_");
             String publicId = "resumes/" + userId + "_" + jobId + "_" + System.currentTimeMillis();
 
             Map uploadResult = cloudinary.uploader().upload(resume.getBytes(), ObjectUtils.asMap(
