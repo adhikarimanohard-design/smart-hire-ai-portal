@@ -1,4 +1,3 @@
-
 package com.smarthire.controller;
 
 import com.smarthire.model.Interview;
