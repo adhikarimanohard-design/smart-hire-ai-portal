@@ -21,7 +21,6 @@ public class ApplicationController {
     @Autowired
     private ApplicationService applicationService;
 
-    // ── Fallback JSON apply (no file) ──────────────────────────────────────────
     @PostMapping
     public ResponseEntity<?> submitApplication(@RequestBody Application application) {
         try {
@@ -31,14 +30,12 @@ public class ApplicationController {
         }
     }
 
-    // ── Candidate: my applications ─────────────────────────────────────────────
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Application>> getUserApplications(
             @PathVariable String userId) {
         return ResponseEntity.ok(applicationService.getUserApplications(userId));
     }
 
-    // ── Recruiter: all applicants for a job ────────────────────────────────────
     @GetMapping("/job/{jobId}")
     public ResponseEntity<List<Application>> getJobApplications(
             @PathVariable String jobId,
@@ -47,7 +44,6 @@ public class ApplicationController {
             applicationService.getJobApplicationsSorted(jobId, sortBy));
     }
 
-    // ── Recruiter: filter by status ────────────────────────────────────────────
     @GetMapping("/job/{jobId}/status")
     public ResponseEntity<List<Application>> getJobApplicationsByStatus(
             @PathVariable String jobId,
@@ -56,7 +52,6 @@ public class ApplicationController {
             applicationService.getJobApplicationsByStatus(jobId, status));
     }
 
-    // ── Recruiter: full candidate profile card ─────────────────────────────────
     @GetMapping("/{applicationId}/profile")
     public ResponseEntity<?> getCandidateProfile(
             @PathVariable String applicationId) {
@@ -68,26 +63,14 @@ public class ApplicationController {
         }
     }
 
-    /**
-     * RESUME DOWNLOAD — reads bytes straight out of the MongoDB document
-     * and streams them to the recruiter. Nothing is read from local disk,
-     * so this keeps working across restarts, spin-downs, and redeploys.
-     */
     @GetMapping("/{applicationId}/resume")
     public ResponseEntity<?> downloadResume(@PathVariable String applicationId) {
         try {
-            byte[] bytes       = applicationService.getResumeBytes(applicationId);
-            String fileName    = applicationService.getResumeName(applicationId);
-            String contentType = applicationService.getResumeContentType(applicationId);
+            byte[] bytes    = applicationService.getResumeBytes(applicationId);
+            String fileName = applicationService.getResumeName(applicationId);
+            String contentTypeStr = applicationService.getResumeContentType(applicationId);
 
-            MediaType mediaType;
-            try {
-                mediaType = MediaType.parseMediaType(contentType);
-            } catch (Exception parseErr) {
-                mediaType = fileName.toLowerCase().endsWith(".pdf")
-                    ? MediaType.APPLICATION_PDF
-                    : MediaType.APPLICATION_OCTET_STREAM;
-            }
+            MediaType mediaType = MediaType.parseMediaType(contentTypeStr);
 
             return ResponseEntity.ok()
                 .contentType(mediaType)
@@ -99,7 +82,6 @@ public class ApplicationController {
         }
     }
 
-    // ── Recruiter: update status (PATCH) ───────────────────────────────────────
     @PatchMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(
             @PathVariable String id,
@@ -112,7 +94,6 @@ public class ApplicationController {
         }
     }
 
-    // ── Recruiter: bulk status update ──────────────────────────────────────────
     @PutMapping("/bulk-status")
     public ResponseEntity<?> bulkUpdateStatus(@RequestBody BulkStatusRequest request) {
         try {
@@ -122,7 +103,6 @@ public class ApplicationController {
         }
     }
 
-    // ── Recruiter: notes ───────────────────────────────────────────────────────
     @PutMapping("/{applicationId}/notes")
     public ResponseEntity<?> updateNotes(
             @PathVariable String applicationId,
@@ -135,7 +115,6 @@ public class ApplicationController {
         }
     }
 
-    // ── Admin ──────────────────────────────────────────────────────────────────
     @GetMapping("/status/{status}")
     public ResponseEntity<List<Application>> getApplicationsByStatus(
             @PathVariable String status) {
