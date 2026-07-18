@@ -10,7 +10,7 @@ const API_BASE = 'https://smart-hire-ai-portal-2-52o9.onrender.com/api';
 /* ================================
    RESILIENT FETCH
 ================================ */
-async function fetchWithRetry(url, options = {}, retries = 3, delayMs = 4000, timeoutMs = 15000) {
+async function fetchWithRetry(url, options = {}, retries = 3, delayMs = 4000, timeoutMs = 60000) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const controller = new AbortController();
