@@ -17,14 +17,8 @@ import java.util.List;
 public class SecurityConfig {
 
     /**
-     * Registered with HIGHEST_PRECEDENCE so it runs before Spring Security
-     * and before multipart/file-upload parsing. This guarantees CORS
-     * headers are present on every response — including ones where an
-     * exception is thrown while parsing the resume upload, before the
-     * request ever reaches a controller's try/catch. Without this, a
-     * multipart-parsing failure comes back with no
-     * Access-Control-Allow-Origin header, and the browser reports it as a
-     * bare "Failed to fetch" instead of the real error.
+     * Registered with HIGHEST_PRECEDENCE to ensure CORS headers are applied 
+     * even when multipart-parsing or other filters fail.
      */
     @Bean
     public FilterRegistrationBean<CorsFilter> corsFilterRegistration() {
@@ -37,12 +31,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // NOTE: CORS is handled entirely by the CorsFilter bean above
-            // (registered at HIGHEST_PRECEDENCE). Do NOT also call
-            // .cors(...) here — Spring Security would attach a second
-            // Access-Control-Allow-Origin header, and browsers reject
-            // responses with duplicate CORS headers outright, which is
-            // why every request started failing instantly.
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/users/register").permitAll()
@@ -62,7 +50,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        
+        // FIX: Replaced wildcard (*) with the specific Vercel production origin
+        // This is required when allowCredentials is true
+        configuration.setAllowedOrigins(List.of("https://smart-hire-ai-portal-five.vercel.app"));
+        
         configuration.setAllowedMethods(List.of(
             "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
         ));
