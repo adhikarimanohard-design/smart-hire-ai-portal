@@ -28,8 +28,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/recruiter/**").permitAll()
                 .requestMatchers("/api/interviews/**").permitAll()
                 .anyRequest().permitAll()
-                .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers("/health").permitAll()
             );
 
         return http.build();
