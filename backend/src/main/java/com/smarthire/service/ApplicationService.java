@@ -33,7 +33,6 @@ public class ApplicationService {
     public Application applyToJob(String jobId, String userId,
             MultipartFile resume, String coverLetter) throws Exception {
 
-        // 1. Duplicate guard
         if (applicationRepository.existsByUserIdAndJobId(userId, jobId))
             throw new RuntimeException("You have already applied for this job");
 
@@ -42,7 +41,6 @@ public class ApplicationService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 2. Build application
         Application application = new Application();
         application.setJobId(jobId);
         application.setUserId(userId);
@@ -53,7 +51,6 @@ public class ApplicationService {
         application.setCandidatePhone(user.getPhone());
         application.setCoverLetter(coverLetter != null ? coverLetter : "");
 
-        // 3. Upload resume to Cloudinary -- NOT to local disk, NOT as Base64 in MongoDB
         if (resume != null && !resume.isEmpty()) {
             String safeOriginal = resume.getOriginalFilename()
                 .replaceAll("[^a-zA-Z0-9._-]", "_");
@@ -78,14 +75,11 @@ public class ApplicationService {
             userRepository.save(user);
         }
 
-        // 4. AI match score
         int matchScore = recommendationService.calculateMatchScore(user, job);
         application.setMatchScore(matchScore);
 
-        // 5. Save
         Application saved = applicationRepository.save(application);
 
-        // 6. Increment job counter
         job.setApplicationsCount(job.getApplicationsCount() + 1);
         jobRepository.save(job);
 
