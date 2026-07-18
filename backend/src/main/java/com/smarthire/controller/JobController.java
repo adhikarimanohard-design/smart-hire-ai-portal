@@ -92,6 +92,22 @@ public class JobController {
         }
     }
 
+    /**
+     * Permanently deletes a job posting and its applications. This is
+     * what powers the "Delete Job" button on the recruiter dashboard —
+     * distinct from the soft-close above, which just deactivates the
+     * listing so it can be reopened later.
+     */
+    @DeleteMapping("/{id}/permanent")
+    public ResponseEntity<?> permanentlyDeleteJob(@PathVariable String id) {
+        try {
+            jobService.permanentlyDeleteJob(id);
+            return ResponseEntity.ok("Job deleted permanently");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PutMapping("/{id}/reopen")
     public ResponseEntity<?> reopenJob(@PathVariable String id) {
         try {
