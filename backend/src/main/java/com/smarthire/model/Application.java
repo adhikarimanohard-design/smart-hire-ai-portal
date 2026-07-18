@@ -18,10 +18,16 @@ public class Application {
     private String candidatePhone;
     private String coverLetter;
 
-    // Resume stored as a FILE on disk — only the path goes in MongoDB.
-    // Old code stored Base64 (~320 KB per doc) which timed out on Render.
-    private String resumeUrl;    // e.g. "uploads/resumes/userId_jobId_CV.pdf"
-    private String resumeName;   // original filename shown to recruiter
+    // Resume is extracted from local (temp) storage during upload, then
+    // persisted straight into this MongoDB document as raw bytes — NOT
+    // as a disk path. Render's free-tier filesystem is ephemeral, so any
+    // file left on disk is wiped on the next restart/redeploy; storing
+    // the bytes here means the resume survives regardless of the server
+    // lifecycle. Files are capped at 5MB (see application.properties),
+    // well under MongoDB's 16MB document limit.
+    private byte[] resumeData;        // raw file bytes
+    private String resumeContentType; // e.g. "application/pdf"
+    private String resumeName;        // original filename shown to recruiter
 
     // PENDING → SHORTLISTED → INTERVIEWING → HIRED / REJECTED
     private String status;
@@ -58,8 +64,11 @@ public class Application {
     public String getCoverLetter() { return coverLetter; }
     public void setCoverLetter(String coverLetter) { this.coverLetter = coverLetter; }
 
-    public String getResumeUrl() { return resumeUrl; }
-    public void setResumeUrl(String resumeUrl) { this.resumeUrl = resumeUrl; }
+    public byte[] getResumeData() { return resumeData; }
+    public void setResumeData(byte[] resumeData) { this.resumeData = resumeData; }
+
+    public String getResumeContentType() { return resumeContentType; }
+    public void setResumeContentType(String resumeContentType) { this.resumeContentType = resumeContentType; }
 
     public String getResumeName() { return resumeName; }
     public void setResumeName(String resumeName) { this.resumeName = resumeName; }
