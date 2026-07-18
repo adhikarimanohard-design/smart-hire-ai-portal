@@ -427,12 +427,20 @@ export default function App() {
   }
 
   function processFile(file) {
-    const valid = [
+    const validTypes = [
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ];
-    if (!valid.includes(file.type)) { showToast('⚠️ PDF or Word documents only'); return; }
+    // Browsers/OSes don't reliably report file.type (often '' or
+    // application/octet-stream for .doc/.docx and sometimes .pdf), so fall
+    // back to checking the file extension rather than rejecting the file.
+    const validExtension = /\.(pdf|docx?)$/i.test(file.name);
+    const validMimeType = validTypes.includes(file.type);
+    if (!validMimeType && !validExtension) {
+      showToast('⚠️ PDF or Word documents only');
+      return;
+    }
     if (file.size > 5 * 1024 * 1024) { showToast('⚠️ File must be under 5MB'); return; }
     setSelectedFile(file);
     setShowParsedSection(false);
