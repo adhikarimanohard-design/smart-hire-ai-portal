@@ -1,17 +1,38 @@
 package com.smarthire.config;
 
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
 @Configuration
 public class SecurityConfig {
+
+    /**
+     * Registered with HIGHEST_PRECEDENCE so it runs before Spring Security
+     * and before multipart/file-upload parsing. This guarantees CORS
+     * headers are present on every response — including ones where an
+     * exception is thrown while parsing the resume upload, before the
+     * request ever reaches a controller's try/catch. Without this, a
+     * multipart-parsing failure comes back with no
+     * Access-Control-Allow-Origin header, and the browser reports it as a
+     * bare "Failed to fetch" instead of the real error.
+     */
+    @Bean
+    public FilterRegistrationBean<CorsFilter> corsFilterRegistration() {
+        FilterRegistrationBean<CorsFilter> bean =
+            new FilterRegistrationBean<>(new CorsFilter(corsConfigurationSource()));
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return bean;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -60,3 +81,4 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 }
+
