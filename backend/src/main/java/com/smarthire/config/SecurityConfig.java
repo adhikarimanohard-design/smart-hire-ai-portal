@@ -1,4 +1,3 @@
-
 package com.smarthire.config;
 
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
