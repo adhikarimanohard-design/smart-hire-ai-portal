@@ -13,6 +13,9 @@ public class JobService {
     @Autowired
     private JobRepository jobRepository;
 
+    @Autowired
+    private com.smarthire.repository.ApplicationRepository applicationRepository;
+
     public List<Job> getAllActiveJobs() {
         return jobRepository.findByActiveTrue();
     }
@@ -65,6 +68,18 @@ public class JobService {
         Job job = getJobById(id);
         job.setActive(false);
         jobRepository.save(job);
+    }
+
+    /**
+     * Permanently removes a job posting and all applications submitted
+     * against it. Unlike deleteJob() (which just closes the listing so
+     * it can be reopened), this is irreversible — used by the "Delete
+     * Job" action on the recruiter dashboard.
+     */
+    public void permanentlyDeleteJob(String id) {
+        Job job = getJobById(id); // throws if not found
+        applicationRepository.deleteByJobId(id);
+        jobRepository.delete(job);
     }
 
     public Job reopenJob(String id) {
