@@ -196,19 +196,26 @@ export default function App() {
     setRecruiterError(null);
     try {
       const [statsRes, jobsRes] = await Promise.all([
-        fetch(`${API_BASE}/recruiter/${currentUser.id}/stats`, {
+        fetchWithRetry(`${API_BASE}/recruiter/${currentUser.id}/stats`, {
           headers: { Authorization: `Bearer ${currentUser.token}` },
         }),
-        fetch(`${API_BASE}/recruiter/${currentUser.id}/jobs`, {
+        fetchWithRetry(`${API_BASE}/recruiter/${currentUser.id}/jobs`, {
           headers: { Authorization: `Bearer ${currentUser.token}` },
         }),
       ]);
       if (statsRes.ok) setRecruiterStats(await statsRes.json());
       if (jobsRes.ok) setRecruiterJobs(await jobsRes.json());
-      if (!statsRes.ok && !jobsRes.ok) throw new Error('Failed to load dashboard');
+      // Previously this only threw when BOTH calls failed, so a single
+      // flaky request (e.g. during a Render cold start) would silently
+      // leave the job list or stats stale with no error shown at all.
+      if (!statsRes.ok || !jobsRes.ok) throw new Error('Failed to fully refresh dashboard');
     } catch (err) {
       console.error('Failed to load recruiter data:', err);
-      setRecruiterError(err.message);
+      setRecruiterError(
+        err.name === 'AbortError' || err instanceof TypeError
+          ? 'Server is taking longer than usual to respond. It may be waking up from sleep — please try again in a moment.'
+          : err.message
+      );
     } finally {
       setRecruiterJobsLoading(false);
     }
@@ -572,7 +579,8 @@ export default function App() {
         company: currentUser.companyName || `${currentUser.firstName}'s Company`,
         postedBy: currentUser.id,
       };
-      const res = await fetch(`${API_BASE}/jobs`, {
+      showToast('⏳ Posting job...');
+      const res = await fetchWithRetry(`${API_BASE}/jobs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -583,9 +591,16 @@ export default function App() {
       if (!res.ok) throw new Error('Failed to post job');
       showToast('✅ Job posted successfully!');
       setPostJobModalOpen(false);
-      loadRecruiterData();
+      // Awaited (was fire-and-forget before) so the dashboard is
+      // guaranteed to reflect the new job, with retry baked in for a
+      // still-warming-up backend right after the POST above.
+      await loadRecruiterData();
     } catch (err) {
-      showToast('❌ Could not post job. Try again.');
+      showToast(
+        err.name === 'AbortError' || err instanceof TypeError
+          ? '❌ Could not reach the server. It may be waking up — please try again in ~30s.'
+          : '❌ Could not post job. Try again.'
+      );
     } finally {
       setPostingJob(false);
     }
