@@ -1,3 +1,4 @@
+
 package com.smarthire.controller;
 
 import com.smarthire.model.Interview;
@@ -10,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/interviews")
+@CrossOrigin(origins = "*")
 public class InterviewController {
 
     @Autowired
@@ -19,60 +21,70 @@ public class InterviewController {
     public ResponseEntity<?> scheduleInterview(
             @RequestBody Interview interview) {
         try {
-            return ResponseEntity.ok(interviewService.scheduleInterview(interview));
+            return ResponseEntity.ok(
+                interviewService.scheduleInterview(interview));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
-    }
-
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Interview>> getUserInterviews(
-            @PathVariable String userId) {
-        return ResponseEntity.ok(interviewService.getUserInterviews(userId));
     }
 
     @GetMapping("/recruiter/{recruiterId}")
     public ResponseEntity<List<Interview>> getRecruiterInterviews(
             @PathVariable String recruiterId) {
-        return ResponseEntity.ok(interviewService.getRecruiterInterviews(recruiterId));
+        return ResponseEntity.ok(
+            interviewService.getRecruiterInterviews(recruiterId));
+    }
+
+    @GetMapping("/recruiter/{recruiterId}/scheduled")
+    public ResponseEntity<List<Interview>> getScheduledInterviews(
+            @PathVariable String recruiterId) {
+        return ResponseEntity.ok(
+            interviewService.getScheduledInterviews(recruiterId));
+    }
+
+    @GetMapping("/candidate/{candidateId}")
+    public ResponseEntity<List<Interview>> getCandidateInterviews(
+            @PathVariable String candidateId) {
+        return ResponseEntity.ok(
+            interviewService.getCandidateInterviews(candidateId));
     }
 
     @GetMapping("/application/{applicationId}")
-    public ResponseEntity<?> getInterviewByApplication(
+    public ResponseEntity<List<Interview>> getInterviewsByApplication(
             @PathVariable String applicationId) {
-        try {
-            return ResponseEntity.ok(
-                interviewService.getInterviewByApplication(applicationId));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.ok(
+            interviewService.getInterviewsByApplication(applicationId));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateInterview(
-            @PathVariable String id, @RequestBody Interview interview) {
+            @PathVariable String id,
+            @RequestBody Interview interview) {
         try {
-            return ResponseEntity.ok(interviewService.updateInterview(id, interview));
+            return ResponseEntity.ok(
+                interviewService.updateInterview(id, interview));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<?> updateStatus(
-            @PathVariable String id, @RequestParam String status) {
+    @PutMapping("/{id}/feedback")
+    public ResponseEntity<?> addFeedback(
+            @PathVariable String id,
+            @RequestParam String feedback) {
         try {
-            return ResponseEntity.ok(interviewService.updateStatus(id, status));
+            return ResponseEntity.ok(
+                interviewService.addFeedback(id, feedback));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    @DeleteMapping("/{id}")
+    @PutMapping("/{id}/cancel")
     public ResponseEntity<?> cancelInterview(@PathVariable String id) {
         try {
-            interviewService.cancelInterview(id);
-            return ResponseEntity.ok("Interview cancelled");
+            return ResponseEntity.ok(
+                interviewService.cancelInterview(id));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
