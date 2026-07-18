@@ -631,14 +631,48 @@ export default function App() {
 
   async function closeJobListing(jobId) {
     try {
-      await fetch(`${API_BASE}/jobs/${jobId}`, {
+      const res = await fetchWithRetry(`${API_BASE}/jobs/${jobId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${currentUser.token}` },
       });
+      if (!res.ok) throw new Error('Close failed');
       showToast('✅ Job listing closed');
       loadRecruiterData();
     } catch (err) {
       showToast('❌ Could not close listing');
+    }
+  }
+
+  async function reopenJobListing(jobId) {
+    try {
+      const res = await fetchWithRetry(`${API_BASE}/jobs/${jobId}/reopen`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${currentUser.token}` },
+      });
+      if (!res.ok) throw new Error('Reopen failed');
+      showToast('✅ Job listing reopened');
+      loadRecruiterData();
+    } catch (err) {
+      showToast('❌ Could not reopen listing');
+    }
+  }
+
+  async function deleteJobPermanently(jobId, jobTitle) {
+    if (!window.confirm(`Delete "${jobTitle}" permanently? This also removes all applications submitted to it. This cannot be undone.`)) {
+      return;
+    }
+    try {
+      const res = await fetchWithRetry(`${API_BASE}/jobs/${jobId}/permanent`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${currentUser.token}` },
+      });
+      if (!res.ok) throw new Error('Delete failed');
+      showToast('🗑️ Job deleted permanently');
+      // Optimistically drop it from the list instead of waiting on a refetch
+      setRecruiterJobs((prev) => prev.filter((j) => j.id !== jobId));
+      loadRecruiterData();
+    } catch (err) {
+      showToast('❌ Could not delete job');
     }
   }
 
@@ -1062,7 +1096,23 @@ export default function App() {
                       <div className="recruiter-job-info">
                         <div className="company-logo">{getCompanyEmoji(job.company || currentUser.firstName)}</div>
                         <div>
-                          <div className="recruiter-job-title">{job.title}</div>
+                          <div className="recruiter-job-title">
+                            {job.title}{' '}
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                padding: '2px 8px',
+                                borderRadius: 999,
+                                marginLeft: 6,
+                                verticalAlign: 'middle',
+                                background: job.active ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.2)',
+                                color: job.active ? '#22c55e' : '#94a3b8',
+                              }}
+                            >
+                              {job.active ? 'Active' : 'Closed'}
+                            </span>
+                          </div>
                           <div className="recruiter-job-meta">📍 {job.location} • 🕒 {getDaysAgo(job.postedDate)}</div>
                         </div>
                       </div>
@@ -1073,8 +1123,21 @@ export default function App() {
                         <button className="view-applicants-btn" onClick={() => openApplicantsModal(job)}>
                           View Applicants
                         </button>
-                        <button className="close-job-btn" onClick={() => closeJobListing(job.id)}>
-                          Close Listing
+                        {job.active ? (
+                          <button className="close-job-btn" onClick={() => closeJobListing(job.id)}>
+                            Close Listing
+                          </button>
+                        ) : (
+                          <button className="close-job-btn" onClick={() => reopenJobListing(job.id)}>
+                            Reopen
+                          </button>
+                        )}
+                        <button
+                          className="close-job-btn"
+                          style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }}
+                          onClick={() => deleteJobPermanently(job.id, job.title)}
+                        >
+                          🗑️ Delete
                         </button>
                       </div>
                     </div>
