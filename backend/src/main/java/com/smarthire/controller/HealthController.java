@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/health")
-@CrossOrigin(origins = "*")
 public class HealthController {
 
     @GetMapping
