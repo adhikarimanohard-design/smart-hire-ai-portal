@@ -18,16 +18,12 @@ public class Application {
     private String candidatePhone;
     private String coverLetter;
 
-    // Resume is extracted from local (temp) storage during upload, then
-    // persisted straight into this MongoDB document as raw bytes — NOT
-    // as a disk path. Render's free-tier filesystem is ephemeral, so any
-    // file left on disk is wiped on the next restart/redeploy; storing
-    // the bytes here means the resume survives regardless of the server
-    // lifecycle. Files are capped at 5MB (see application.properties),
-    // well under MongoDB's 16MB document limit.
-    private byte[] resumeData;        // raw file bytes
-    private String resumeContentType; // e.g. "application/pdf"
-    private String resumeName;        // original filename shown to recruiter
+    // Resume stored on Cloudinary — only the secure URL + public ID go in MongoDB.
+    // Old code stored the file on local disk, which Render's free web service
+    // wipes on every restart/redeploy/spin-down, so resumes kept disappearing.
+    private String resumeUrl;      // Cloudinary secure_url
+    private String resumePublicId; // Cloudinary public_id, needed to delete/replace the file later
+    private String resumeName;     // original filename shown to recruiter
 
     // PENDING → SHORTLISTED → INTERVIEWING → HIRED / REJECTED
     private String status;
@@ -64,11 +60,11 @@ public class Application {
     public String getCoverLetter() { return coverLetter; }
     public void setCoverLetter(String coverLetter) { this.coverLetter = coverLetter; }
 
-    public byte[] getResumeData() { return resumeData; }
-    public void setResumeData(byte[] resumeData) { this.resumeData = resumeData; }
+    public String getResumeUrl() { return resumeUrl; }
+    public void setResumeUrl(String resumeUrl) { this.resumeUrl = resumeUrl; }
 
-    public String getResumeContentType() { return resumeContentType; }
-    public void setResumeContentType(String resumeContentType) { this.resumeContentType = resumeContentType; }
+    public String getResumePublicId() { return resumePublicId; }
+    public void setResumePublicId(String resumePublicId) { this.resumePublicId = resumePublicId; }
 
     public String getResumeName() { return resumeName; }
     public void setResumeName(String resumeName) { this.resumeName = resumeName; }
