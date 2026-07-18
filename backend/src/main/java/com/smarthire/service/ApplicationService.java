@@ -1,5 +1,7 @@
 package com.smarthire.service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.smarthire.dto.BulkStatusRequest;
 import com.smarthire.dto.CandidateProfile;
 import com.smarthire.model.Application;
@@ -12,12 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ApplicationService {
@@ -26,27 +28,8 @@ public class ApplicationService {
     @Autowired private JobRepository         jobRepository;
     @Autowired private UserRepository        userRepository;
     @Autowired private RecommendationService recommendationService;
+    @Autowired private Cloudinary            cloudinary;
 
-    // ── Primary apply: resume extracted from local storage, then persisted
-    //    directly into MongoDB (not left on disk) ────────────────────────────
-    /**
-     * RESUME PERSISTENCE:
-     *
-     * Multipart uploads land in local temp storage first (that's how
-     * Spring/Tomcat receives them). We extract the bytes from there and
-     * write them straight into the Application document in MongoDB, then
-     * discard the temp file — nothing resume-related is left on disk.
-     *
-     * Why: Render's free-tier filesystem is ephemeral. Anything written to
-     * "uploads/resumes/" (the old approach) is wiped on the next restart,
-     * spin-down, or redeploy, so recruiters would eventually get
-     * "resume not found" even though the application itself saved fine.
-     * Storing the bytes in MongoDB means the resume survives the server's
-     * lifecycle. Files are capped at 5MB (application.properties), well
-     * under MongoDB's 16MB per-document limit, so this stays fast.
-     *
-     * Recruiter downloads resume via GET /api/applications/{id}/resume
-     */
     public Application applyToJob(String jobId, String userId,
             MultipartFile resume, String coverLetter) throws Exception {
 
@@ -70,29 +53,25 @@ public class ApplicationService {
         application.setCandidatePhone(user.getPhone());
         application.setCoverLetter(coverLetter != null ? coverLetter : "");
 
-        // 3. Extract resume from local (temp) storage, then store the
-        //    bytes directly in MongoDB — nothing persists on local disk
+        // 3. Upload resume to Cloudinary -- NOT to local disk, NOT as Base64 in MongoDB
         if (resume != null && !resume.isEmpty()) {
             String safeOriginal = resume.getOriginalFilename()
                 .replaceAll("[^a-zA-Z0-9._-]", "_");
+            String publicId = "resumes/" + userId + "_" + jobId + "_" + System.currentTimeMillis();
 
-            // Land the upload in a temp file first (extract from local
-            // storage)...
-            Path tempFile = Files.createTempFile("resume_", "_" + safeOriginal);
-            try {
-                resume.transferTo(tempFile);
-                byte[] fileBytes = Files.readAllBytes(tempFile);
+            Map uploadResult = cloudinary.uploader().upload(resume.getBytes(), ObjectUtils.asMap(
+                "public_id", publicId,
+                "resource_type", "raw",
+                "overwrite", true,
+                "use_filename", false
+            ));
 
-                // ...then persist the bytes into the MongoDB document.
-                application.setResumeData(fileBytes);
-                application.setResumeContentType(resume.getContentType());
-                application.setResumeName(resume.getOriginalFilename());
-            } finally {
-                // Temp file's job is done — don't rely on it surviving.
-                Files.deleteIfExists(tempFile);
-            }
+            String secureUrl = (String) uploadResult.get("secure_url");
 
-            // Keep user profile in sync
+            application.setResumeUrl(secureUrl);
+            application.setResumePublicId((String) uploadResult.get("public_id"));
+            application.setResumeName(safeOriginal);
+
             user.setResumeName(resume.getOriginalFilename());
             user.setResumeUploaded(true);
             user.setUpdatedAt(LocalDateTime.now());
@@ -103,7 +82,7 @@ public class ApplicationService {
         int matchScore = recommendationService.calculateMatchScore(user, job);
         application.setMatchScore(matchScore);
 
-        // 5. Save tiny document — instant, no timeout
+        // 5. Save
         Application saved = applicationRepository.save(application);
 
         // 6. Increment job counter
@@ -113,13 +92,14 @@ public class ApplicationService {
         return saved;
     }
 
-    // ── Resume download — serves bytes straight from MongoDB ──────────────────
     public byte[] getResumeBytes(String applicationId) throws Exception {
         Application app = applicationRepository.findById(applicationId)
             .orElseThrow(() -> new RuntimeException("Application not found"));
-        if (app.getResumeData() == null || app.getResumeData().length == 0)
+        if (app.getResumeUrl() == null)
             throw new RuntimeException("No resume attached to this application");
-        return app.getResumeData();
+        try (var in = new URL(app.getResumeUrl()).openStream()) {
+            return in.readAllBytes();
+        }
     }
 
     public String getResumeName(String applicationId) {
@@ -128,19 +108,12 @@ public class ApplicationService {
             .orElse("resume.pdf");
     }
 
-    public String getResumeContentType(String applicationId) {
-        return applicationRepository.findById(applicationId)
-            .map(Application::getResumeContentType)
-            .orElse("application/octet-stream");
-    }
-
     public boolean hasResume(String applicationId) {
         return applicationRepository.findById(applicationId)
-            .map(a -> a.getResumeData() != null && a.getResumeData().length > 0)
+            .map(a -> a.getResumeUrl() != null && !a.getResumeUrl().isEmpty())
             .orElse(false);
     }
 
-    // ── Fallback JSON apply (no file) ──────────────────────────────────────────
     public Application submitApplication(Application application) {
         if (applicationRepository.existsByUserIdAndJobId(
                 application.getUserId(), application.getJobId()))
@@ -157,7 +130,6 @@ public class ApplicationService {
         return applicationRepository.save(application);
     }
 
-    // ── Recruiter: enriched applicant profiles ─────────────────────────────────
     public List<CandidateProfile> getJobApplicantsProfiles(String jobId) {
         List<Application> applications =
             applicationRepository.findByJobIdOrderByMatchScoreDesc(jobId);
@@ -176,8 +148,8 @@ public class ApplicationService {
             profile.setUpdatedAt(app.getUpdatedAt());
             profile.setPhone(app.getCandidatePhone());
             profile.setResumeName(app.getResumeName());
-            profile.setHasResume(app.getResumeData() != null
-                && app.getResumeData().length > 0);
+            profile.setHasResume(app.getResumeUrl() != null
+                && !app.getResumeUrl().isEmpty());
 
             userRepository.findById(app.getUserId()).ifPresentOrElse(user -> {
                 profile.setFirstName(user.getFirstName());
@@ -200,8 +172,6 @@ public class ApplicationService {
         }
         return profiles;
     }
-
-    // ── Common operations ──────────────────────────────────────────────────────
 
     public Application getApplicationById(String id) {
         return applicationRepository.findById(id)
@@ -289,7 +259,7 @@ public class ApplicationService {
         profile.setExperience(user.getExperience());
         profile.setEducation(user.getEducation());
         profile.setResumeName(app.getResumeName());
-        profile.setHasResume(app.getResumeData() != null && app.getResumeData().length > 0);
+        profile.setHasResume(app.getResumeUrl() != null);
         profile.setLinkedinUrl(user.getLinkedinUrl());
         profile.setApplicationId(app.getId());
         profile.setJobId(app.getJobId());
