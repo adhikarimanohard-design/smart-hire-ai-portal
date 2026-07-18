@@ -17,10 +17,15 @@ public class Application {
     private String candidateEmail;
     private String candidatePhone;
     private String coverLetter;
-    private String resumeData;
-    private String resumeFileName;
-    private String resumeContentType;
+
+    // Resume stored as a FILE on disk — only the path goes in MongoDB.
+    // Old code stored Base64 (~320 KB per doc) which timed out on Render.
+    private String resumeUrl;    // e.g. "uploads/resumes/userId_jobId_CV.pdf"
+    private String resumeName;   // original filename shown to recruiter
+
+    // PENDING → SHORTLISTED → INTERVIEWING → HIRED / REJECTED
     private String status;
+
     private Integer matchScore;
     private String recruiterNotes;
     private LocalDateTime appliedAt;
@@ -29,7 +34,7 @@ public class Application {
     public Application() {
         this.appliedAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
-        this.status = "PENDING";
+        this.status    = "PENDING";
     }
 
     public String getId() { return id; }
@@ -53,14 +58,11 @@ public class Application {
     public String getCoverLetter() { return coverLetter; }
     public void setCoverLetter(String coverLetter) { this.coverLetter = coverLetter; }
 
-    public String getResumeData() { return resumeData; }
-    public void setResumeData(String resumeData) { this.resumeData = resumeData; }
+    public String getResumeUrl() { return resumeUrl; }
+    public void setResumeUrl(String resumeUrl) { this.resumeUrl = resumeUrl; }
 
-    public String getResumeFileName() { return resumeFileName; }
-    public void setResumeFileName(String resumeFileName) { this.resumeFileName = resumeFileName; }
-
-    public String getResumeContentType() { return resumeContentType; }
-    public void setResumeContentType(String resumeContentType) { this.resumeContentType = resumeContentType; }
+    public String getResumeName() { return resumeName; }
+    public void setResumeName(String resumeName) { this.resumeName = resumeName; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
@@ -69,7 +71,7 @@ public class Application {
     public void setMatchScore(Integer matchScore) { this.matchScore = matchScore; }
 
     public String getRecruiterNotes() { return recruiterNotes; }
-    public void setRecruiterNotes(String recruiterNotes) { this.recruiterNotes = recruiterNotes; }
+    public void setRecruiterNotes(String notes) { this.recruiterNotes = notes; }
 
     public LocalDateTime getAppliedAt() { return appliedAt; }
     public void setAppliedAt(LocalDateTime appliedAt) { this.appliedAt = appliedAt; }
