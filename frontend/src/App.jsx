@@ -7,6 +7,38 @@ import './index.css';
 const API_BASE = 'https://smart-hire-ai-portal-2-d0rz.onrender.com/api';
 
 /* ================================
+   RESILIENT FETCH
+   The backend is hosted on Render's free
+   tier, which spins the server down after
+   ~15 min of inactivity. The *first* request
+   after that can take 30-60s to respond (or
+   fail outright) while the instance wakes up —
+   this is what makes "create account" / "jobs"
+   look completely broken when really the
+   server is just booting. This wrapper retries
+   a few times with backoff before giving up, so
+   a cold start doesn't look like a hard failure.
+================================ */
+async function fetchWithRetry(url, options = {}, retries = 3, delayMs = 4000) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeout);
+      return res;
+    } catch (err) {
+      const isLastAttempt = attempt === retries;
+      // Network error / timeout / CORS failure — likely a cold-starting
+      // or unreachable backend. Retry with backoff unless this was the
+      // last attempt, in which case let the caller handle the failure.
+      if (isLastAttempt) throw err;
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+}
+
+/* ================================
    COMPANY EMOJIS
 ================================ */
 const COMPANY_EMOJIS = {
@@ -132,13 +164,20 @@ export default function App() {
     setJobsLoading(true);
     setJobsError(null);
     try {
-      const res = await fetch(`${API_BASE}/jobs`);
+      const res = await fetchWithRetry(`${API_BASE}/jobs`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setAllJobs(data);
     } catch (err) {
       console.error('Failed to load jobs:', err);
-      setJobsError(err.message);
+      // TypeError here almost always means the request never reached the
+      // server (offline, CORS block, or the Render instance failed to
+      // wake up in time) rather than the API returning an error.
+      setJobsError(
+        err.name === 'AbortError' || err instanceof TypeError
+          ? 'Server is taking longer than usual to respond. It may be waking up from sleep — please try again in a moment.'
+          : err.message
+      );
     } finally {
       setJobsLoading(false);
     }
@@ -228,7 +267,8 @@ export default function App() {
     if (!email.includes('@')) { showToast('⚠️ Enter a valid email'); return; }
 
     try {
-      const res = await fetch(`${API_BASE}/users/login`, {
+      showToast('⏳ Signing in...');
+      const res = await fetchWithRetry(`${API_BASE}/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.toLowerCase(), password: pass }),
@@ -255,7 +295,14 @@ export default function App() {
       setLoginModalOpen(false);
       showToast(`✅ Welcome back, ${user.firstName}!`);
     } catch (err) {
-      showToast('❌ Login failed. Try again.');
+      // A TypeError/AbortError here means the request never got a
+      // response at all — almost always a sleeping/unreachable backend,
+      // not bad credentials.
+      showToast(
+        err.name === 'AbortError' || err instanceof TypeError
+          ? '❌ Could not reach the server. It may be waking up — please try again in ~30s.'
+          : '❌ Login failed. Try again.'
+      );
     }
   }
 
@@ -272,7 +319,8 @@ export default function App() {
     if (pass.length < 8) { showToast('⚠️ Password must be at least 8 characters'); return; }
 
     try {
-      const res = await fetch(`${API_BASE}/users/register`, {
+      showToast('⏳ Creating your account...');
+      const res = await fetchWithRetry(`${API_BASE}/users/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ firstName, lastName, email: email.toLowerCase(), password: pass, role }),
@@ -302,7 +350,14 @@ export default function App() {
       setLoginModalOpen(false);
       showToast(`🎉 Welcome, ${firstName}!`);
     } catch (err) {
-      showToast('❌ Registration failed. Try again.');
+      // A TypeError/AbortError means the request never reached the
+      // server — the backend is most likely asleep, crashed, or
+      // unreachable (CORS/network), not a validation problem.
+      showToast(
+        err.name === 'AbortError' || err instanceof TypeError
+          ? '❌ Could not reach the server. It may be waking up — please try again in ~30s.'
+          : '❌ Registration failed. Try again.'
+      );
     }
   }
 
@@ -832,6 +887,9 @@ export default function App() {
                     <h3>⚠️ Could not load jobs</h3>
                     <p>Backend may be waking up. Please refresh in 30 seconds.</p>
                     <p style={{ marginTop: 8, fontSize: 12, color: 'var(--text-dim)' }}>{jobsError}</p>
+                    <button className="auth-submit-btn" style={{ marginTop: 16, maxWidth: 200 }} onClick={loadJobs}>
+                      🔄 Try Again
+                    </button>
                   </div>
                 )}
 
