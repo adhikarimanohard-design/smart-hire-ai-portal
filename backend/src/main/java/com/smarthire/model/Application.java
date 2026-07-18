@@ -18,14 +18,10 @@ public class Application {
     private String candidatePhone;
     private String coverLetter;
 
-    // Resume stored on Cloudinary — only the secure URL + public ID go in MongoDB.
-    // Old code stored the file on local disk, which Render's free web service
-    // wipes on every restart/redeploy/spin-down, so resumes kept disappearing.
     private String resumeUrl;      // Cloudinary secure_url
-    private String resumePublicId; // Cloudinary public_id, needed to delete/replace the file later
+    private String resumePublicId; // Cloudinary public_id
     private String resumeName;     // original filename shown to recruiter
 
-    // PENDING → SHORTLISTED → INTERVIEWING → HIRED / REJECTED
     private String status;
 
     private Integer matchScore;
