@@ -1,3 +1,4 @@
+
 package com.smarthire.config;
 
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -37,7 +38,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            // NOTE: CORS is handled entirely by the CorsFilter bean above
+            // (registered at HIGHEST_PRECEDENCE). Do NOT also call
+            // .cors(...) here — Spring Security would attach a second
+            // Access-Control-Allow-Origin header, and browsers reject
+            // responses with duplicate CORS headers outright, which is
+            // why every request started failing instantly.
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/users/register").permitAll()
@@ -81,4 +87,3 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 }
-
