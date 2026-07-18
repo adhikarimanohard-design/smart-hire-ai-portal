@@ -19,23 +19,32 @@ const API_BASE = 'https://smart-hire-ai-portal-2-52o9.onrender.com/api';
    a few times with backoff before giving up, so
    a cold start doesn't look like a hard failure.
 ================================ */
-async function fetchWithRetry(url, options = {}, retries = 3, delayMs = 4000) {
+async function fetchWithRetry(url, options = {}, retries = 3, delayMs = 4000, timeoutMs = 15000) {
+  let lastErr;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
       const res = await fetch(url, { ...options, signal: controller.signal });
       clearTimeout(timeout);
       return res;
     } catch (err) {
+      lastErr = err;
       const isLastAttempt = attempt === retries;
       // Network error / timeout / CORS failure — likely a cold-starting
       // or unreachable backend. Retry with backoff unless this was the
       // last attempt, in which case let the caller handle the failure.
-      if (isLastAttempt) throw err;
+      if (isLastAttempt) {
+        // Give a clearer message than the browser's bare "Failed to fetch"
+        if (err.name === 'AbortError') {
+          throw new Error('Server took too long to respond. It may be waking up — please try again in a moment.');
+        }
+        throw new Error('Could not reach the server. Please check your connection and try again.');
+      }
       await new Promise((r) => setTimeout(r, delayMs));
     }
   }
+  throw lastErr;
 }
 
 /* ================================
@@ -472,11 +481,11 @@ export default function App() {
       formData.append('resume', selectedFile);
       formData.append('userId', currentUser.id);
 
-      const applyRes = await fetch(`${API_BASE}/jobs/${applyTargetJob.id}/apply`, {
+      const applyRes = await fetchWithRetry(`${API_BASE}/jobs/${applyTargetJob.id}/apply`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${currentUser.token}` },
         body: formData,
-      });
+      }, 3, 4000, 25000);
 
       clearInterval(progressIntervalRef.current);
       setUploadingProgress(100);
@@ -615,7 +624,7 @@ export default function App() {
     setApplicantsLoading(true);
     setApplicants([]);
     try {
-      const res = await fetch(`${API_BASE}/jobs/${job.id}/applicants`, {
+      const res = await fetchWithRetry(`${API_BASE}/jobs/${job.id}/applicants`, {
         headers: { Authorization: `Bearer ${currentUser.token}` },
       });
       if (res.ok) setApplicants(await res.json());
@@ -628,7 +637,7 @@ export default function App() {
 
   async function updateApplicantStatus(applicationId, status) {
     try {
-      const res = await fetch(`${API_BASE}/applications/${applicationId}/status`, {
+      const res = await fetchWithRetry(`${API_BASE}/applications/${applicationId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
