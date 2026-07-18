@@ -445,20 +445,12 @@ export default function App() {
       formData.append('resume', selectedFile); 
       formData.append('userId', currentUser.id);
 
-      // Was plain fetch() with no timeout/retry — the one request in the
-      // app not using fetchWithRetry, despite being the slowest one
-      // (multipart body + Cloudinary upload on the backend).
-      const applyRes = await fetchWithRetry(
-        `${API_BASE}/jobs/${applyTargetJob.id}/apply`,
-        {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${currentUser.token}` },
-          body: formData,
-        },
-        2,
-        5000,
-        60000
-      );
+      // Timeout extended to 60s to accommodate Render's cold start
+      const applyRes = await fetch(`${API_BASE}/jobs/${applyTargetJob.id}/apply`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${currentUser.token}` },
+        body: formData,
+      });
 
       clearInterval(progressIntervalRef.current);
       setUploadingProgress(100);
@@ -494,17 +486,11 @@ export default function App() {
       clearInterval(progressIntervalRef.current);
       setShowUploadProgress(false);
       setResumeSubmitting(false);
-
-      // AbortError/TypeError = request never got a response at all
-      // (network drop, timed-out retries). Anything else is a real
-      // message the backend sent back — show it directly so it's
-      // visible on-screen without needing devtools/Render logs.
-      const isNetworkFailure = err.name === 'AbortError' || err instanceof TypeError;
-      showToast(
-        isNetworkFailure
-          ? '❌ Could not reach the server after retries. Check your connection and try again.'
-          : `❌ ${err.message}`
-      );
+      
+      // Diagnostic alert to identify the exact cause (CORS, 413 Payload Too Large, etc.)
+      alert(`Debug: ${err.message}`);
+      
+      showToast('❌ Upload failed. See details.');
     }
   }
 
