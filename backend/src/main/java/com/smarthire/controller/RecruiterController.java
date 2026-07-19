@@ -24,4 +24,18 @@ public class RecruiterController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    // The frontend dashboard (loadRecruiterData in App.jsx) calls this
+    // alongside /stats on every load to list the recruiter's posted jobs
+    // with live applicant counts. It didn't exist, so that call 404'd
+    // and the dashboard job list stayed empty/broken.
+    @GetMapping("/{recruiterId}/jobs")
+    public ResponseEntity<?> getRecruiterJobs(@PathVariable String recruiterId) {
+        try {
+            List<Job> jobs = recruiterService.getJobsByRecruiter(recruiterId);
+            return ResponseEntity.ok(jobs);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
