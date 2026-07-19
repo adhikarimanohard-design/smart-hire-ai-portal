@@ -442,17 +442,23 @@ export default function App() {
     try {
       const formData = new FormData();
       // Use "resume" as the key to match backend expectations in JobController
-      formData.append('resume', selectedFile); 
+      formData.append('resume', selectedFile);
       formData.append('userId', currentUser.id);
 
-      // Was plain fetch() with no timeout/retry — the one request in the
-      // app not using fetchWithRetry, despite being the slowest one
-      // (multipart body + Cloudinary upload on the backend).
+      // NOTE: no Authorization header on this request on purpose.
+      // Nothing server-side reads it for this endpoint (SecurityConfig
+      // permits all requests here, and there's no JWT filter checking
+      // it), but a custom header forces the browser to send a CORS
+      // preflight (OPTIONS) before the real POST. On some mobile
+      // networks/carrier proxies that preflight gets silently dropped,
+      // which surfaces to the user as "could not reach the server" even
+      // though the backend is perfectly reachable. Dropping the header
+      // lets this qualify as a CORS-simple request (multipart/form-data,
+      // no custom headers) and skips the preflight entirely.
       const applyRes = await fetchWithRetry(
         `${API_BASE}/jobs/${applyTargetJob.id}/apply`,
         {
           method: 'POST',
-          headers: { Authorization: `Bearer ${currentUser.token}` },
           body: formData,
         },
         2,
