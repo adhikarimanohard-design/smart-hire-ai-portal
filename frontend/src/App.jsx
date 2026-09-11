@@ -5,7 +5,7 @@ import './index.css';
 /* ================================
    CONFIG
 ================================ */
-const API_BASE = 'https://smart-hire-ai-portal-2-52o9.onrender.com/api/health;
+const API_BASE = 'https://smart-hire-ai-portal-2-52o9.onrender.com/api/health';
 /* ================================
    RESILIENT FETCH
 ================================ */
